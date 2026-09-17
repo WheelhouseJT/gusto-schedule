@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wheelhouse Schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCjWxu9CLzKD3Xd6Sswjn4wp2PIj5mTZ78",
+    authDomain: "sean-s-gusto-schedule.firebaseapp.com",
+    projectId: "sean-s-gusto-schedule",
+    storageBucket: "sean-s-gusto-schedule.firebasestorage.app",
+    messagingSenderId: "407510062415",
+    appId: "1:407510062415:web:b25773a20df2e66a3a213a"
+  };
+  firebase.initializeApp(firebaseConfig);
+</script>
+<style>
+  :root {
+    --paper: #F6F3EC;
+    --paper-raised: #FFFFFF;
+    --ink: #232A2E;
+    --ink-soft: #5B6469;
+    --line: #DEDACB;
+    --line-strong: #C9C3AE;
+    --gold: #B8892B;
+    --gold-soft: #E8D9AF;
+    --full: #2F6B44;
+    --full-text: #F6F3EC;
+    --part-bg: rgba(58, 138, 87, 0.20);
+    --part-border: rgba(58, 138, 87, 0.55);
+    --part-text: #1F4A30;
+    --danger: #A6432F;
+    --danger-soft: rgba(166, 67, 47, 0.12);
+    --shadow: 0 1px 2px rgba(35,42,46,0.06), 0 4px 14px rgba(35,42,46,0.06);
+    --radius: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1B1E1A;
+      --paper-raised: #242823;
+      --ink: #EDE9DD;
+      --ink-soft: #A8A392;
+      --line: #3A3D35;
+      --line-strong: #4A4D42;
+      --gold: #D9AE5C;
+      --gold-soft: #4A3C1E;
+      --full: #4C9A6A;
+      --full-text: #10160F;
+      --part-bg: rgba(76, 154, 106, 0.22);
+      --part-border: rgba(76, 154, 106, 0.5);
+      --part-text: #A9E0BC;
+      --danger: #D9705A;
+      --danger-soft: rgba(217, 112, 90, 0.16);
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1B1E1A;
+    --paper-raised: #242823;
+    --ink: #EDE9DD;
+    --ink-soft: #A8A392;
+    --line: #3A3D35;
+    --line-strong: #4A4D42;
+    --gold: #D9AE5C;
+    --gold-soft: #4A3C1E;
+    --full: #4C9A6A;
+    --full-text: #10160F;
+    --part-bg: rgba(76, 154, 106, 0.22);
+    --part-border: rgba(76, 154, 106, 0.5);
+    --part-text: #A9E0BC;
+    --danger: #D9705A;
+    --danger-soft: rgba(217, 112, 90, 0.16);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.3);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100%;
+  }
+  body { padding: 20px 20px 60px; }
+
+  .wrap { max-width: 1400px; margin: 0 auto; }
+
+  header.top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--ink);
+  }
+  .sub { color: var(--ink-soft); font-size: 13px; margin-top: 2px; }
+
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 6px 8px;
+    box-shadow: var(--shadow);
+  }
+  .week-nav button.arrow {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .week-nav button.arrow:hover { background: var(--gold-soft); border-color: var(--gold); }
+  .week-label { font-weight: 600; font-size: 14.5px; min-width: 190px; text-align: center; }
+  .today-btn {
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    padding: 5px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .today-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .store-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .store-tabs button {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .store-tabs button:hover { border-color: var(--line-strong); color: var(--ink); }
+  .store-tabs button.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  .add-emp {
+    display: flex;
+    gap: 6px;
+  }
+  .add-emp input {
+    font-family: inherit;
+    font-size: 13.5px;
+    padding: 7px 11px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    color: var(--ink);
+    width: 170px;
+  }
+  .add-emp input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .add-emp button {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--gold);
+    background: var(--gold);
+    color: #2A2110;
+    cursor: pointer;
+  }
+  .add-emp button:hover { filter: brightness(1.05); }
+
+  .copy-banner {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--gold-soft);
+    border: 1px solid var(--gold);
+    color: var(--ink);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .copy-banner.show { display: flex; }
+  .copy-banner strong { font-weight: 700; }
+  .copy-banner .cancel-copy {
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 7px;
+    border: 1px solid var(--line-strong);
+    background: var(--paper-raised);
+    color: var(--ink);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .grid-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper-raised);
+    box-shadow: var(--shadow);
+  }
+
+  table.sched {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    min-width: 980px;
+  }
+  table.sched th, table.sched td {
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+  table.sched th:last-child, table.sched td:last-child { border-right: none; }
+
+  th.name-col-head, td.name-col {
+    position: sticky;
+    left: 0;
+    background: var(--paper-raised);
+    z-index: 2;
+    width: 190px;
+    min-width: 190px;
+  }
+  th.name-col-head { z-index: 4; }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--paper-raised);
+    z-index: 3;
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  thead th .dow { display: block; }
+  thead th .ddate { display: block; font-weight: 400; color: var(--ink-soft); font-size: 12px; margin-top: 1px; }
+
+  td.name-col {
+    padding: 0;
+    vertical-align: middle;
+  }
+  .emp-row-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 6px 10px 4px;
+    gap: 4px;
+  }
+  .drag-handle {
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    color: var(--ink-soft);
+    cursor: grab;
+    font-size: 13px;
+    letter-spacing: -1px;
+    user-select: none;
+  }
+  .drag-handle:active { cursor: grabbing; }
+  .emp-name {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .emp-actions {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+  }
+  .emp-move, .emp-del {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.55;
+  }
+  .emp-del { font-size: 12px; margin-left: 3px; }
+  .emp-move:hover:not(:disabled) { background: var(--gold-soft); color: var(--ink); opacity: 1; }
+  .emp-move:disabled { opacity: 0.2; cursor: default; }
+  .emp-del:hover { background: var(--danger-soft); color: var(--danger); opacity: 1; }
+  tr.drag-over td.name-col { box-shadow: inset 0 2px 0 var(--gold); }
+
+  td.cell {
+    padding: 6px;
+    vertical-align: top;
+    min-width: 128px;
+    height: 58px;
+  }
+  .shift-box {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6px 22px 6px 9px;
+    font-size: 12px;
+    line-height: 1.35;
+    border: 1px dashed var(--line-strong);
+    color: var(--ink-soft);
+    background: transparent;
+    text-align: left;
+    font-family: inherit;
+  }
+  .copy-icon {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 17px;
+    height: 17px;
+    border-radius: 5px;
+    border: none;
+    background: rgba(0,0,0,0.12);
+    color: inherit;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.75;
+    padding: 0;
+  }
+  .copy-icon:hover { opacity: 1; background: rgba(0,0,0,0.22); }
+  .shift-box.paste-target { border-color: var(--gold); border-style: solid; }
+  .shift-box:hover { border-color: var(--gold); color: var(--ink); }
+  .shift-box:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+  .shift-box.full {
+    background: var(--full);
+    color: var(--full-text);
+    border: 1px solid var(--full);
+  }
+  .shift-box.part {
+    background: var(--part-bg);
+    color: var(--part-text);
+    border: 1px solid var(--part-border);
+  }
+  .shift-time { font-weight: 700; }
+  .shift-loc { opacity: 0.9; margin-top: 1px; }
+  .shift-type-tag {
+    font-size: 10px;
+    text-transform: none;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
+
+  .empty-state {
+    padding: 50px 20px;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+  .empty-state .big { font-family: 'Fraunces', serif; font-size: 19px; color: var(--ink); margin-bottom: 6px; }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 7px; }
+  .swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+  .swatch.full { background: var(--full); border: 1px solid var(--full); }
+  .swatch.part { background: var(--part-bg); border: 1px solid var(--part-border); }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(20,22,18,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal {
+    background: var(--paper-raised);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    width: 100%;
+    max-width: 360px;
+    padding: 22px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .modal h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 19px;
+    margin: 0 0 3px;
+    font-weight: 600;
+  }
+  .modal .modal-sub { color: var(--ink-soft); font-size: 13px; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+  }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  input[type="time"], select.modal-select {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  input[type="time"]:focus, select.modal-select:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+  .type-toggle { display: flex; gap: 8px; }
+  .type-toggle button {
+    flex: 1;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 8px;
+    border-radius: 7px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .type-toggle button.sel-full.on { background: var(--full); color: var(--full-text); border-color: var(--full); }
+  .type-toggle button.sel-part.on { background: var(--part-bg); color: var(--part-text); border-color: var(--part-border); }
+
+  .modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    gap: 8px;
+  }
+  .btn {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 15px;
+    border-radius: 7px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .btn.primary { background: var(--gold); border-color: var(--gold); color: #2A2110; }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--ink-soft); }
+  .btn.ghost:hover { color: var(--danger); }
+  .btn:hover { filter: brightness(1.04); }
+
+  .confirm-box {
+    position: fixed; inset: 0;
+    background: rgba(20,22,18,0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 60;
+    padding: 20px;
+  }
+  .confirm-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 320px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .confirm-card p { font-size: 14px; margin: 0 0 16px; color: var(--ink); }
+  .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 80;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 640px) {
+    body { padding: 14px 10px 50px; }
+    h1 { font-size: 22px; }
+    .week-label { min-width: 150px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Wheelhouse Schedule</h1>
+      <div class="sub" id="statusLine">Loading…</div>
+    </div>
+    <div class="week-nav">
+      <button class="arrow" id="prevWeek" aria-label="Previous week">‹</button>
+      <div class="week-label" id="weekLabel">—</div>
+      <button class="arrow" id="nextWeek" aria-label="Next week">›</button>
+      <button class="today-btn" id="thisWeekBtn">This week</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="store-tabs" id="storeTabs"></div>
+    <div class="add-emp">
+      <input type="text" id="newEmpName" placeholder="Add employee name" maxlength="60">
+      <button id="addEmpBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="copy-banner" id="copyBanner">
+    <span id="copyBannerText"></span>
+    <button class="cancel-copy" id="cancelCopyBtn">Cancel</button>
+  </div>
+
+  <div class="grid-scroll">
+    <table class="sched" id="schedTable">
+      <thead>
+        <tr id="headRow"></tr>
+      </thead>
+      <tbody id="bodyRows"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch full"></span> Full time</div>
+    <div class="legend-item"><span class="swatch part"></span> Part time</div>
+    <div class="legend-item">Click any square to set a shift · store view filters by location</div>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+(function() {
+  const STORES = ["Flagship", "West", "Ardmore", "Philly"];
+  const DOW_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+  let db = null;
+  let employees = []; // [{id, name, order}]
+  let shiftsByKey = {}; // "empId_dow" -> {start,end,location,type}
+  let currentWeekStart = mondayOf(new Date());
+  let storeFilter = "all";
+  let unsubEmployees = null;
+  let unsubShifts = null;
+  let editing = null; // {empId, dow}
+  let copiedShift = null; // {start,end,location,type}
+  let draggedEmpId = null;
+
+  function mondayOf(d) {
+    const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const day = date.getDay(); // 0 = Sun
+    const diff = (day === 0 ? -6 : 1 - day);
+    date.setDate(date.getDate() + diff);
+    return date;
+  }
+  function addDays(d, n) {
+    const nd = new Date(d);
+    nd.setDate(nd.getDate() + n);
+    return nd;
+  }
+  function isoDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function shortDate(d) {
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  }
+  function weekLabel(monday) {
+    const sunday = addDays(monday, 6);
+    const sameMonth = monday.getMonth() === sunday.getMonth();
+    const opts1 = { month: 'short', day: 'numeric' };
+    const left = monday.toLocaleDateString('en-US', opts1);
+    const right = sameMonth
+      ? String(sunday.getDate())
+      : sunday.toLocaleDateString('en-US', opts1);
+    return `${left} – ${right}, ${sunday.getFullYear()}`;
+  }
+  function to12h(hhmm) {
+    if (!hhmm) return "";
+    const [h, m] = hhmm.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12; if (h12 === 0) h12 = 12;
+    return m === 0 ? `${h12}${ampm.toLowerCase()}` : `${h12}:${String(m).padStart(2,'0')}${ampm.toLowerCase()}`;
+  }
+  function keyFor(empId, dow) { return empId + "_" + dow; }
+  function toast(msg) {
+    const root = document.getElementById('toastRoot');
+    root.innerHTML = `<div class="toast show">${escapeHtml(msg)}</div>`;
+    setTimeout(() => {
+      const t = root.querySelector('.toast');
+      if (t) t.classList.remove('show');
+    }, 1800);
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function init() {
+    document.getElementById('statusLine').textContent = "Connecting…";
+    try {
+      db = firebase.firestore();
+      document.getElementById('statusLine').textContent = "";
+    } catch (e) {
+      console.error(e);
+      db = null;
+      document.getElementById('statusLine').textContent = "Couldn't connect to storage — changes won't be saved.";
+    }
+    buildStoreTabs();
+    bindTopControls();
+    subscribeEmployees();
+    subscribeShiftsForWeek();
+    renderWeekLabel();
+    render();
+  }
+
+  function buildStoreTabs() {
+    const wrap = document.getElementById('storeTabs');
+    const tabs = [{ key: "all", label: "All employees" }].concat(
+      STORES.map(s => ({ key: s, label: s }))
+    );
+    wrap.innerHTML = tabs.map(t =>
+      `<button data-key="${t.key}" class="${t.key===storeFilter?'active':''}">${escapeHtml(t.label)}</button>`
+    ).join('');
+    wrap.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        storeFilter = btn.getAttribute('data-key');
+        wrap.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        render();
+      });
+    });
+  }
+
+  function bindTopControls() {
+    document.getElementById('prevWeek').addEventListener('click', () => {
+      currentWeekStart = addDays(currentWeekStart, -7);
+      onWeekChanged();
+    });
+    document.getElementById('nextWeek').addEventListener('click', () => {
+      currentWeekStart = addDays(currentWeekStart, 7);
+      onWeekChanged();
+    });
+    document.getElementById('thisWeekBtn').addEventListener('click', () => {
+      currentWeekStart = mondayOf(new Date());
+      onWeekChanged();
+    });
+    document.getElementById('addEmpBtn').addEventListener('click', addEmployee);
+    document.getElementById('newEmpName').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addEmployee();
+    });
+    document.getElementById('cancelCopyBtn').addEventListener('click', exitCopyMode);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && copiedShift) exitCopyMode();
+    });
+  }
+
+  function enterCopyMode(shift) {
+    copiedShift = { start: shift.start, end: shift.end, location: shift.location, type: shift.type };
+    renderCopyBanner();
+    render();
+  }
+  function exitCopyMode() {
+    copiedShift = null;
+    renderCopyBanner();
+    render();
+  }
+  function renderCopyBanner() {
+    const banner = document.getElementById('copyBanner');
+    if (!copiedShift) { banner.classList.remove('show'); return; }
+    const typeLabel = copiedShift.type === 'part' ? 'Part time' : 'Full time';
+    document.getElementById('copyBannerText').innerHTML =
+      `Copying <strong>${to12h(copiedShift.start)}–${to12h(copiedShift.end)} · ${escapeHtml(copiedShift.location)} (${typeLabel})</strong> — click any square to paste it there`;
+    banner.classList.add('show');
+  }
+
+  async function pasteShift(emp, dow) {
+    if (!copiedShift || !db) return;
+    try {
+      await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set({
+        empId: emp.id,
+        weekStart: isoDate(currentWeekStart),
+        dow,
+        start: copiedShift.start,
+        end: copiedShift.end,
+        location: copiedShift.location,
+        type: copiedShift.type
+      });
+      toast("Shift pasted.");
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't paste shift.");
+    }
+  }
+
+  async function moveEmployee(empId, dir) {
+    const idx = employees.findIndex(e => e.id === empId);
+    if (idx === -1) return;
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= employees.length) return;
+    if (!db) { toast("Storage unavailable — can't reorder right now."); return; }
+    const a = employees[idx], b = employees[swapIdx];
+    const aOrder = typeof a.order === 'number' ? a.order : idx;
+    const bOrder = typeof b.order === 'number' ? b.order : swapIdx;
+    try {
+      await db.collection("employees").doc(a.id).update({ order: bOrder });
+      await db.collection("employees").doc(b.id).update({ order: aOrder });
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't reorder employees.");
+    }
+  }
+
+  async function reorderByDrag(draggedId, targetId) {
+    if (!draggedId || draggedId === targetId || !db) return;
+    const fromIdx = employees.findIndex(e => e.id === draggedId);
+    if (fromIdx === -1) return;
+    const arr = employees.slice();
+    const [moved] = arr.splice(fromIdx, 1);
+    const toIdx = arr.findIndex(e => e.id === targetId);
+    if (toIdx === -1) return;
+    arr.splice(toIdx, 0, moved);
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i].order !== i) {
+        try {
+          await db.collection("employees").doc(arr[i].id).update({ order: i });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }
+
+  function onWeekChanged() {
+    renderWeekLabel();
+    subscribeShiftsForWeek();
+    render();
+  }
+
+  function renderWeekLabel() {
+    document.getElementById('weekLabel').textContent = weekLabel(currentWeekStart);
+  }
+
+  function subscribeEmployees() {
+    if (!db) { employees = []; render(); return; }
+    if (unsubEmployees) unsubEmployees();
+    unsubEmployees = db.collection("employees").orderBy("order", "asc").onSnapshot(
+      (snap) => {
+        employees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        render();
+      },
+      (err) => {
+        console.error(err);
+        toast("Couldn't load employees.");
+      }
+    );
+  }
+
+  function subscribeShiftsForWeek() {
+    if (!db) { shiftsByKey = {}; render(); return; }
+    if (unsubShifts) unsubShifts();
+    const wk = isoDate(currentWeekStart);
+    unsubShifts = db.collection("shifts").where("weekStart", "==", wk).onSnapshot(
+      (snap) => {
+        const next = {};
+        snap.docs.forEach(d => {
+          const data = d.data();
+          next[keyFor(data.empId, data.dow)] = data;
+        });
+        shiftsByKey = next;
+        render();
+      },
+      (err) => {
+        console.error(err);
+        toast("Couldn't load this week's schedule.");
+      }
+    );
+  }
+
+  async function addEmployee() {
+    const input = document.getElementById('newEmpName');
+    const name = input.value.trim();
+    if (!name) return;
+    if (!db) { toast("Storage unavailable — can't add employees right now."); return; }
+    const maxOrder = employees.reduce((m, e) => Math.max(m, typeof e.order === 'number' ? e.order : 0), -1);
+    try {
+      await db.collection("employees").add({ name, order: maxOrder + 1 });
+      input.value = '';
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't add employee.");
+    }
+  }
+
+  let pendingDelete = null;
+  function askDeleteEmployee(emp) {
+    pendingDelete = emp;
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `
+      <div class="confirm-box" id="confirmBox">
+        <div class="confirm-card">
+          <p>Remove <strong>${escapeHtml(emp.name)}</strong> from the schedule? Their shifts will no longer be shown.</p>
+          <div class="confirm-actions">
+            <button class="btn ghost" id="cancelDel">Cancel</button>
+            <button class="btn primary" id="confirmDel" style="background:var(--danger);border-color:var(--danger);color:#fff;">Remove</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('cancelDel').addEventListener('click', closeConfirm);
+    document.getElementById('confirmDel').addEventListener('click', doDeleteEmployee);
+    document.getElementById('confirmBox').addEventListener('click', (e) => {
+      if (e.target.id === 'confirmBox') closeConfirm();
+    });
+  }
+  function closeConfirm() {
+    pendingDelete = null;
+    document.getElementById('modalRoot').innerHTML = '';
+  }
+  async function doDeleteEmployee() {
+    if (!pendingDelete || !db) { closeConfirm(); return; }
+    try {
+      await db.collection("employees").doc(pendingDelete.id).delete();
+      toast("Employee removed.");
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't remove employee.");
+    }
+    closeConfirm();
+  }
+
+  function openShiftModal(emp, dow, dateObj) {
+    editing = { empId: emp.id, dow };
+    const existing = shiftsByKey[keyFor(emp.id, dow)] || null;
+    const root = document.getElementById('modalRoot');
+    const locOptions = STORES.map(s =>
+      `<option value="${s}" ${existing && existing.location===s?'selected':''}>${s}</option>`
+    ).join('');
+    root.innerHTML = `
+      <div class="overlay" id="overlayBox">
+        <div class="modal">
+          <h2>${escapeHtml(emp.name)}</h2>
+          <div class="modal-sub">${DOW_NAMES[dow]}, ${shortDate(dateObj)}</div>
+          <div class="field-row">
+            <div class="field">
+              <label for="startTime">Start time</label>
+              <input type="time" id="startTime" value="${existing ? existing.start||'' : ''}">
+            </div>
+            <div class="field">
+              <label for="endTime">End time</label>
+              <input type="time" id="endTime" value="${existing ? existing.end||'' : ''}">
+            </div>
+          </div>
+          <div class="field">
+            <label for="locSelect">Store location</label>
+            <select class="modal-select" id="locSelect">
+              ${locOptions}
+            </select>
+          </div>
+          <div class="field">
+            <label>Employment type</label>
+            <div class="type-toggle">
+              <button type="button" class="sel-full ${(!existing || existing.type==='full')?'on':''}" id="btnFull">Full time</button>
+              <button type="button" class="sel-part ${(existing && existing.type==='part')?'on':''}" id="btnPart">Part time</button>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <div style="display:flex;gap:6px;">
+              <button class="btn ghost" id="clearShift" ${existing?'':'style="visibility:hidden"'}>Clear</button>
+              <button class="btn" id="copyShiftBtn" ${existing?'':'style="visibility:hidden"'} title="Copy this shift to paste elsewhere">Copy</button>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn" id="cancelShift">Cancel</button>
+              <button class="btn primary" id="saveShift">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    let selType = (existing && existing.type === 'part') ? 'part' : 'full';
+    const btnFull = document.getElementById('btnFull');
+    const btnPart = document.getElementById('btnPart');
+    function refreshTypeButtons() {
+      btnFull.classList.toggle('on', selType === 'full');
+      btnPart.classList.toggle('on', selType === 'part');
+    }
+    btnFull.addEventListener('click', () => { selType = 'full'; refreshTypeButtons(); });
+    btnPart.addEventListener('click', () => { selType = 'part'; refreshTypeButtons(); });
+
+    document.getElementById('cancelShift').addEventListener('click', closeShiftModal);
+    document.getElementById('overlayBox').addEventListener('click', (e) => {
+      if (e.target.id === 'overlayBox') closeShiftModal();
+    });
+    document.addEventListener('keydown', escCloseOnce);
+
+    if (existing) {
+      document.getElementById('clearShift').addEventListener('click', async () => {
+        if (!db) { closeShiftModal(); return; }
+        try {
+          await db.collection("shifts").doc(shiftDocId(emp.id, dow)).delete();
+          toast("Shift cleared.");
+        } catch (e) { console.error(e); toast("Couldn't clear shift."); }
+        closeShiftModal();
+      });
+      document.getElementById('copyShiftBtn').addEventListener('click', () => {
+        closeShiftModal();
+        enterCopyMode(existing);
+        toast("Shift copied — click any square to paste it.");
+      });
+    }
+
+    document.getElementById('saveShift').addEventListener('click', async () => {
+      const start = document.getElementById('startTime').value;
+      const end = document.getElementById('endTime').value;
+      const location = document.getElementById('locSelect').value;
+      if (!start || !end) { toast("Set a start and end time."); return; }
+      if (!db) { toast("Storage unavailable — can't save."); return; }
+      try {
+        await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set({
+          empId: emp.id,
+          weekStart: isoDate(currentWeekStart),
+          dow,
+          start, end, location,
+          type: selType
+        });
+        toast("Shift saved.");
+      } catch (e) { console.error(e); toast("Couldn't save shift."); }
+      closeShiftModal();
+    });
+  }
+  function escCloseOnce(e) {
+    if (e.key === 'Escape') closeShiftModal();
+  }
+  function closeShiftModal() {
+    document.removeEventListener('keydown', escCloseOnce);
+    editing = null;
+    document.getElementById('modalRoot').innerHTML = '';
+  }
+  function shiftDocId(empId, dow) {
+    return isoDate(currentWeekStart) + "__" + empId + "__" + dow;
+  }
+
+  function render() {
+    renderHead();
+    renderBody();
+    renderCopyBanner();
+  }
+
+  function renderHead() {
+    const head = document.getElementById('headRow');
+    let html = `<th class="name-col-head">Employee</th>`;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(currentWeekStart, i);
+      html += `<th><span class="dow">${DOW_NAMES[i]}</span><span class="ddate">${shortDate(d)}</span></th>`;
+    }
+    head.innerHTML = html;
+  }
+
+  function renderBody() {
+    const body = document.getElementById('bodyRows');
+    let visibleEmployees = employees;
+
+    if (storeFilter !== "all") {
+      visibleEmployees = employees.filter(emp => {
+        for (let dow = 0; dow < 7; dow++) {
+          const s = shiftsByKey[keyFor(emp.id, dow)];
+          if (s && s.location === storeFilter) return true;
+        }
+        return false;
+      });
+    }
+
+    if (employees.length === 0) {
+      body.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+        <div class="big">No employees yet</div>
+        Add your team on the right to start building the week.
+      </div></td></tr>`;
+      return;
+    }
+
+    if (storeFilter !== "all" && visibleEmployees.length === 0) {
+      body.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+        <div class="big">Nobody's scheduled at ${escapeHtml(storeFilter)} this week</div>
+        Switch to "All employees" to add shifts.
+      </div></td></tr>`;
+      return;
+    }
+
+    const canReorder = storeFilter === "all";
+    let rows = '';
+    visibleEmployees.forEach((emp, i) => {
+      const fullIdx = employees.findIndex(e => e.id === emp.id);
+      const atTop = fullIdx <= 0;
+      const atBottom = fullIdx >= employees.length - 1;
+      rows += `<tr data-row="${emp.id}">
+        <td class="name-col">
+          <div class="emp-row-inner">
+            ${canReorder ? `<span class="drag-handle" draggable="true" data-emp="${emp.id}" title="Drag to reorder">⠿</span>` : ''}
+            <span class="emp-name">${escapeHtml(emp.name)}</span>
+            <div class="emp-actions">
+              ${canReorder ? `
+                <button class="emp-move" data-emp="${emp.id}" data-dir="up" title="Move up" aria-label="Move ${escapeHtml(emp.name)} up" ${atTop?'disabled':''}>▲</button>
+                <button class="emp-move" data-emp="${emp.id}" data-dir="down" title="Move down" aria-label="Move ${escapeHtml(emp.name)} down" ${atBottom?'disabled':''}>▼</button>
+              ` : ''}
+              <button class="emp-del" data-emp="${emp.id}" title="Remove employee" aria-label="Remove ${escapeHtml(emp.name)}">✕</button>
+            </div>
+          </div>
+        </td>`;
+      for (let dow = 0; dow < 7; dow++) {
+        const s = shiftsByKey[keyFor(emp.id, dow)];
+        const showBlank = storeFilter !== "all" && (!s || s.location !== storeFilter);
+        const pasteCls = copiedShift ? 'paste-target' : '';
+        if (s && !showBlank) {
+          const cls = s.type === 'part' ? 'part' : 'full';
+          rows += `<td class="cell">
+            <button class="shift-box ${cls} ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">
+              <span class="shift-time">${to12h(s.start)}–${to12h(s.end)}</span>
+              <span class="shift-loc">${storeFilter === 'all' ? escapeHtml(s.location) : (s.type === 'part' ? 'Part time' : 'Full time')}</span>
+              <span class="copy-icon" data-emp="${emp.id}" data-dow="${dow}" title="Copy this shift">⧉</span>
+            </button>
+          </td>`;
+        } else {
+          rows += `<td class="cell">
+            <button class="shift-box ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">+ Add</button>
+          </td>`;
+        }
+      }
+      rows += `</tr>`;
+    });
+    body.innerHTML = rows;
+
+    body.querySelectorAll('.shift-box').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (e.target.closest('.copy-icon')) return;
+        const empId = btn.getAttribute('data-emp');
+        const dow = parseInt(btn.getAttribute('data-dow'), 10);
+        const emp = employees.find(e2 => e2.id === empId);
+        if (!emp) return;
+        if (copiedShift) {
+          pasteShift(emp, dow);
+        } else {
+          openShiftModal(emp, dow, addDays(currentWeekStart, dow));
+        }
+      });
+    });
+    body.querySelectorAll('.copy-icon').forEach(icon => {
+      icon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const empId = icon.getAttribute('data-emp');
+        const dow = parseInt(icon.getAttribute('data-dow'), 10);
+        const s = shiftsByKey[keyFor(empId, dow)];
+        if (s) {
+          enterCopyMode(s);
+          toast("Shift copied — click any square to paste it.");
+        }
+      });
+    });
+    body.querySelectorAll('.emp-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const empId = btn.getAttribute('data-emp');
+        const emp = employees.find(e => e.id === empId);
+        if (emp) askDeleteEmployee(emp);
+      });
+    });
+    body.querySelectorAll('.emp-move').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const empId = btn.getAttribute('data-emp');
+        const dir = btn.getAttribute('data-dir');
+        moveEmployee(empId, dir);
+      });
+    });
+
+    if (canReorder) {
+      body.querySelectorAll('.drag-handle').forEach(handle => {
+        handle.addEventListener('dragstart', (e) => {
+          draggedEmpId = handle.getAttribute('data-emp');
+          e.dataTransfer.effectAllowed = 'move';
+          try { e.dataTransfer.setData('text/plain', draggedEmpId); } catch (err) {}
+        });
+        handle.addEventListener('dragend', () => {
+          draggedEmpId = null;
+          body.querySelectorAll('tr.drag-over').forEach(tr => tr.classList.remove('drag-over'));
+        });
+      });
+      body.querySelectorAll('tr[data-row]').forEach(tr => {
+        tr.addEventListener('dragover', (e) => {
+          if (!draggedEmpId) return;
+          e.preventDefault();
+          tr.classList.add('drag-over');
+        });
+        tr.addEventListener('dragleave', () => tr.classList.remove('drag-over'));
+        tr.addEventListener('drop', (e) => {
+          e.preventDefault();
+          tr.classList.remove('drag-over');
+          const targetId = tr.getAttribute('data-row');
+          if (draggedEmpId && targetId) reorderByDrag(draggedEmpId, targetId);
+          draggedEmpId = null;
+        });
+      });
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
