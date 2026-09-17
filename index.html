@@ -37,6 +37,10 @@
     --part-text: #1F4A30;
     --danger: #A6432F;
     --danger-soft: rgba(166, 67, 47, 0.12);
+    --timeoff-bg: #E6E2D3;
+    --timeoff-border: #C9C3AE;
+    --timeoff-text: #4A4F42;
+    --timeoff-sub: #8B8873;
     --shadow: 0 1px 2px rgba(35,42,46,0.06), 0 4px 14px rgba(35,42,46,0.06);
     --radius: 10px;
   }
@@ -58,6 +62,10 @@
       --part-text: #A9E0BC;
       --danger: #D9705A;
       --danger-soft: rgba(217, 112, 90, 0.16);
+      --timeoff-bg: #35382F;
+      --timeoff-border: #4A4D42;
+      --timeoff-text: #D8D4C2;
+      --timeoff-sub: #99977F;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.3);
     }
   }
@@ -77,6 +85,10 @@
     --part-text: #A9E0BC;
     --danger: #D9705A;
     --danger-soft: rgba(217, 112, 90, 0.16);
+    --timeoff-bg: #35382F;
+    --timeoff-border: #4A4D42;
+    --timeoff-text: #D8D4C2;
+    --timeoff-sub: #99977F;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.3);
   }
 
@@ -356,6 +368,34 @@
     text-align: left;
     font-family: inherit;
   }
+  .shift-box.timeoff {
+    background: var(--timeoff-bg);
+    border: 1px solid var(--timeoff-border);
+    color: var(--timeoff-text);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .timeoff-label { font-weight: 700; font-size: 13px; }
+  .timeoff-sub { font-weight: 400; color: var(--timeoff-sub); font-size: 11.5px; margin-top: 1px; }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+  }
+  .checkbox-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--gold);
+    cursor: pointer;
+  }
+  .fields-disabled { opacity: 0.4; pointer-events: none; }
+
   .copy-icon {
     position: absolute;
     top: 4px;
@@ -720,7 +760,9 @@
   }
 
   function enterCopyMode(shift) {
-    copiedShift = { start: shift.start, end: shift.end, location: shift.location, type: shift.type };
+    copiedShift = shift.timeOff
+      ? { timeOff: true }
+      : { start: shift.start, end: shift.end, location: shift.location, type: shift.type, timeOff: false };
     renderCopyBanner();
     render();
   }
@@ -732,28 +774,37 @@
   function renderCopyBanner() {
     const banner = document.getElementById('copyBanner');
     if (!copiedShift) { banner.classList.remove('show'); return; }
-    const typeLabel = copiedShift.type === 'part' ? 'Part time' : 'Full time';
-    document.getElementById('copyBannerText').innerHTML =
-      `Copying <strong>${to12h(copiedShift.start)}–${to12h(copiedShift.end)} · ${escapeHtml(copiedShift.location)} (${typeLabel})</strong> — click any square to paste it there`;
+    let msg;
+    if (copiedShift.timeOff) {
+      msg = `Copying <strong>Time off (all day)</strong> — click any square to paste it there`;
+    } else {
+      const typeLabel = copiedShift.type === 'part' ? 'Part time' : 'Full time';
+      msg = `Copying <strong>${to12h(copiedShift.start)}–${to12h(copiedShift.end)} · ${escapeHtml(copiedShift.location)} (${typeLabel})</strong> — click any square to paste it there`;
+    }
+    document.getElementById('copyBannerText').innerHTML = msg;
     banner.classList.add('show');
   }
 
   async function pasteShift(emp, dow) {
     if (!copiedShift || !db) return;
     try {
-      await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set({
-        empId: emp.id,
-        weekStart: isoDate(currentWeekStart),
-        dow,
-        start: copiedShift.start,
-        end: copiedShift.end,
-        location: copiedShift.location,
-        type: copiedShift.type
-      });
-      toast("Shift pasted.");
+      const payload = copiedShift.timeOff
+        ? { empId: emp.id, weekStart: isoDate(currentWeekStart), dow, timeOff: true }
+        : {
+            empId: emp.id,
+            weekStart: isoDate(currentWeekStart),
+            dow,
+            start: copiedShift.start,
+            end: copiedShift.end,
+            location: copiedShift.location,
+            type: copiedShift.type,
+            timeOff: false
+          };
+      await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set(payload);
+      toast(copiedShift.timeOff ? "Time off pasted." : "Shift pasted.");
     } catch (e) {
       console.error(e);
-      toast("Couldn't paste shift.");
+      toast("Couldn't paste.");
     }
   }
 
@@ -904,14 +955,21 @@
         <div class="modal">
           <h2>${escapeHtml(emp.name)}</h2>
           <div class="modal-sub">${DOW_NAMES[dow]}, ${shortDate(dateObj)}</div>
+          <div class="field">
+            <label class="checkbox-row">
+              <input type="checkbox" id="timeOffCheck" ${existing && existing.timeOff ? 'checked' : ''}>
+              Time off
+            </label>
+          </div>
+          <div id="shiftFields">
           <div class="field-row">
             <div class="field">
               <label for="startTime">Start time</label>
-              <input type="time" id="startTime" value="${existing ? existing.start||'' : ''}">
+              <input type="time" id="startTime" value="${existing && !existing.timeOff ? existing.start||'' : ''}">
             </div>
             <div class="field">
               <label for="endTime">End time</label>
-              <input type="time" id="endTime" value="${existing ? existing.end||'' : ''}">
+              <input type="time" id="endTime" value="${existing && !existing.timeOff ? existing.end||'' : ''}">
             </div>
           </div>
           <div class="field">
@@ -926,6 +984,7 @@
               <button type="button" class="sel-full ${(!existing || existing.type==='full')?'on':''}" id="btnFull">Full time</button>
               <button type="button" class="sel-part ${(existing && existing.type==='part')?'on':''}" id="btnPart">Part time</button>
             </div>
+          </div>
           </div>
           <div class="modal-actions">
             <div style="display:flex;gap:6px;">
@@ -950,6 +1009,14 @@
     btnFull.addEventListener('click', () => { selType = 'full'; refreshTypeButtons(); });
     btnPart.addEventListener('click', () => { selType = 'part'; refreshTypeButtons(); });
 
+    const timeOffCheck = document.getElementById('timeOffCheck');
+    const shiftFields = document.getElementById('shiftFields');
+    function refreshTimeOffState() {
+      shiftFields.classList.toggle('fields-disabled', timeOffCheck.checked);
+    }
+    timeOffCheck.addEventListener('change', refreshTimeOffState);
+    refreshTimeOffState();
+
     document.getElementById('cancelShift').addEventListener('click', closeShiftModal);
     document.getElementById('overlayBox').addEventListener('click', (e) => {
       if (e.target.id === 'overlayBox') closeShiftModal();
@@ -973,18 +1040,32 @@
     }
 
     document.getElementById('saveShift').addEventListener('click', async () => {
+      if (!db) { toast("Storage unavailable — can't save."); return; }
+      if (timeOffCheck.checked) {
+        try {
+          await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set({
+            empId: emp.id,
+            weekStart: isoDate(currentWeekStart),
+            dow,
+            timeOff: true
+          });
+          toast("Time off saved.");
+        } catch (e) { console.error(e); toast("Couldn't save."); }
+        closeShiftModal();
+        return;
+      }
       const start = document.getElementById('startTime').value;
       const end = document.getElementById('endTime').value;
       const location = document.getElementById('locSelect').value;
       if (!start || !end) { toast("Set a start and end time."); return; }
-      if (!db) { toast("Storage unavailable — can't save."); return; }
       try {
         await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set({
           empId: emp.id,
           weekStart: isoDate(currentWeekStart),
           dow,
           start, end, location,
-          type: selType
+          type: selType,
+          timeOff: false
         });
         toast("Shift saved.");
       } catch (e) { console.error(e); toast("Couldn't save shift."); }
@@ -1071,9 +1152,17 @@
         </td>`;
       for (let dow = 0; dow < 7; dow++) {
         const s = shiftsByKey[keyFor(emp.id, dow)];
-        const showBlank = storeFilter !== "all" && (!s || s.location !== storeFilter);
+        const showBlank = storeFilter !== "all" && (!s || (!s.timeOff && s.location !== storeFilter));
         const pasteCls = copiedShift ? 'paste-target' : '';
-        if (s && !showBlank) {
+        if (s && s.timeOff) {
+          rows += `<td class="cell">
+            <button class="shift-box timeoff ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">
+              <span class="timeoff-label">Time off</span>
+              <span class="timeoff-sub">All day</span>
+              <span class="copy-icon" data-emp="${emp.id}" data-dow="${dow}" title="Copy this">⧉</span>
+            </button>
+          </td>`;
+        } else if (s && !showBlank) {
           const cls = s.type === 'part' ? 'part' : 'full';
           rows += `<td class="cell">
             <button class="shift-box ${cls} ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">
