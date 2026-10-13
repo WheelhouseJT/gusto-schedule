@@ -425,6 +425,23 @@
   }
   .copy-icon:hover { opacity: 1; background: rgba(0,0,0,0.22); }
   .shift-box.paste-target { border-color: var(--gold); border-style: solid; }
+  .shift-box.selectable { cursor: pointer; }
+  .shift-box.selected { outline: 3px solid var(--danger); outline-offset: 1px; }
+  .shift-box.selected::after {
+    content: "✓"; position: absolute; top: 3px; right: 5px;
+    font-size: 12px; font-weight: 700; color: var(--danger);
+    background: var(--paper-raised); border-radius: 50%; width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .shift-box.select-dim { opacity: 0.35; cursor: default; }
+  body.selecting .copy-icon { display: none; }
+  .copy-banner.select-banner { background: var(--danger-soft); border-color: var(--danger); }
+  .copy-banner .del-selected {
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 5px 12px; border-radius: 7px;
+    border: 1px solid var(--danger); background: var(--danger); color: #fff; cursor: pointer;
+  }
+  .copy-banner .del-selected:disabled { opacity: 0.45; cursor: default; }
   .shift-box:hover { border-color: var(--gold); color: var(--ink); }
   .shift-box:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
 
@@ -609,6 +626,7 @@
       <button class="arrow" id="nextWeek" aria-label="Next week">›</button>
       <button class="today-btn" id="thisWeekBtn">This week</button>
       <button class="today-btn" id="copyWeekBtn" title="Copy every shift in this week">Copy week</button>
+      <button class="today-btn" id="selectBtn" title="Select several shifts to delete at once">Select</button>
       <button class="today-btn" id="undoBtn" title="Undo last change (Ctrl+Z)" disabled>↶ Undo</button>
     </div>
   </header>
@@ -624,6 +642,15 @@
   <div class="copy-banner" id="copyBanner">
     <span id="copyBannerText"></span>
     <button class="cancel-copy" id="cancelCopyBtn">Cancel</button>
+  </div>
+
+  <div class="copy-banner select-banner" id="selectBanner">
+    <span id="selectBannerText"></span>
+    <div class="banner-actions">
+      <button class="cancel-copy" id="selectAllBtn">Select all this week</button>
+      <button class="del-selected" id="deleteSelectedBtn">Delete selected</button>
+      <button class="cancel-copy" id="cancelSelectBtn">Done</button>
+    </div>
   </div>
 
   <div class="copy-banner" id="weekBanner">
@@ -672,6 +699,9 @@
   let pastingWeek = false;
   let undoStack = []; // [{label, changes:[{id, before}]}] — newest last
   let undoing = false;
+  let selectMode = false;
+  let selectedKeys = new Set(); // keyFor(empId, dow)
+  let deletingSel = false;
 
   function mondayOf(d) {
     const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -779,6 +809,13 @@
     document.getElementById('cancelCopyBtn').addEventListener('click', exitCopyMode);
     document.getElementById('copyWeekBtn').addEventListener('click', copyCurrentWeek);
     document.getElementById('undoBtn').addEventListener('click', undoLast);
+    document.getElementById('selectBtn').addEventListener('click', () => selectMode ? exitSelectMode() : enterSelectMode());
+    document.getElementById('cancelSelectBtn').addEventListener('click', exitSelectMode);
+    document.getElementById('selectAllBtn').addEventListener('click', toggleSelectAll);
+    document.getElementById('deleteSelectedBtn').addEventListener('click', deleteSelected);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && selectMode && !document.getElementById('modalRoot').innerHTML.trim()) exitSelectMode();
+    });
     document.addEventListener('keydown', (e) => {
       if (!((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z')) return;
       const t = e.target;
@@ -795,6 +832,7 @@
   }
 
   function enterCopyMode(shift) {
+    if (selectMode) { selectMode = false; selectedKeys = new Set(); }
     copiedShift = shift.timeOff
       ? { timeOff: true }
       : { start: shift.start, end: shift.end, location: shift.location, type: shift.type, timeOff: false };
@@ -843,6 +881,77 @@
       console.error(e);
       toast("Couldn't paste.");
     }
+  }
+
+  // ---- Multi-select delete ----
+  function visibleShiftKeys() {
+    const keys = [];
+    Object.values(shiftsByKey).forEach(sh => {
+      const showBlank = storeFilter !== "all" && (!sh.timeOff && sh.location !== storeFilter);
+      if (!showBlank && employees.some(e => e.id === sh.empId)) keys.push(keyFor(sh.empId, sh.dow));
+    });
+    return keys;
+  }
+  function enterSelectMode() {
+    if (copiedShift) exitCopyMode();
+    selectMode = true;
+    selectedKeys = new Set();
+    render();
+  }
+  function exitSelectMode() {
+    selectMode = false;
+    selectedKeys = new Set();
+    render();
+  }
+  function toggleSelectAll() {
+    const keys = visibleShiftKeys();
+    const allOn = keys.length && keys.every(k => selectedKeys.has(k));
+    selectedKeys = allOn ? new Set() : new Set(keys);
+    render();
+  }
+  function renderSelectBanner() {
+    const banner = document.getElementById('selectBanner');
+    document.body.classList.toggle('selecting', selectMode);
+    const sb = document.getElementById('selectBtn');
+    sb.textContent = selectMode ? "Done selecting" : "Select";
+    if (!selectMode) { banner.classList.remove('show'); return; }
+    // drop selections whose shift no longer exists
+    selectedKeys.forEach(k => { if (!shiftsByKey[k]) selectedKeys.delete(k); });
+    const n = selectedKeys.size;
+    const keys = visibleShiftKeys();
+    document.getElementById('selectBannerText').innerHTML = n
+      ? `<strong>${n} selected</strong> — click shifts to add or remove them`
+      : `Click the shifts you want to delete`;
+    document.getElementById('selectAllBtn').textContent =
+      keys.length && keys.every(k => selectedKeys.has(k)) ? "Unselect all" : "Select all this week";
+    const del = document.getElementById('deleteSelectedBtn');
+    del.disabled = n === 0 || deletingSel;
+    del.textContent = deletingSel ? "Deleting…" : (n ? `Delete ${n}` : "Delete selected");
+    banner.classList.add('show');
+  }
+  async function deleteSelected() {
+    if (!selectedKeys.size || !db || deletingSel) return;
+    deletingSel = true; renderSelectBanner();
+    const changes = [];
+    const batch = db.batch();
+    selectedKeys.forEach(k => {
+      const sh = shiftsByKey[k];
+      if (!sh) return;
+      const id = shiftDocId(sh.empId, sh.dow);
+      changes.push({ id, before: Object.assign({}, sh) });
+      batch.delete(db.collection("shifts").doc(id));
+    });
+    try {
+      await batch.commit();
+      pushUndo(`delete ${changes.length} shift${changes.length===1?'':'s'}`, changes);
+      toast(`Deleted ${changes.length} shift${changes.length===1?'':'s'} — Undo brings them back.`);
+      selectedKeys = new Set();
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't delete — nothing was changed.");
+    }
+    deletingSel = false;
+    render();
   }
 
   // ---- Undo ----
@@ -1014,6 +1123,7 @@
   }
 
   function onWeekChanged() {
+    selectedKeys = new Set();
     renderWeekLabel();
     renderWeekBanner();
     subscribeShiftsForWeek();
@@ -1262,6 +1372,7 @@
     renderHead();
     renderBody();
     renderCopyBanner();
+    renderSelectBanner();
   }
 
   function renderHead() {
@@ -1327,7 +1438,12 @@
       for (let dow = 0; dow < 7; dow++) {
         const s = shiftsByKey[keyFor(emp.id, dow)];
         const showBlank = storeFilter !== "all" && (!s || (!s.timeOff && s.location !== storeFilter));
-        const pasteCls = copiedShift ? 'paste-target' : '';
+        let pasteCls = copiedShift ? 'paste-target' : '';
+        if (selectMode) {
+          pasteCls += (s && !showBlank)
+            ? (selectedKeys.has(keyFor(emp.id, dow)) ? ' selectable selected' : ' selectable')
+            : ' select-dim';
+        }
         if (s && s.timeOff) {
           rows += `<td class="cell">
             <button class="shift-box timeoff ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">
@@ -1362,6 +1478,13 @@
         const dow = parseInt(btn.getAttribute('data-dow'), 10);
         const emp = employees.find(e2 => e2.id === empId);
         if (!emp) return;
+        if (selectMode) {
+          const k = keyFor(empId, dow);
+          if (!btn.classList.contains('selectable')) return;
+          if (selectedKeys.has(k)) selectedKeys.delete(k); else selectedKeys.add(k);
+          render();
+          return;
+        }
         if (copiedShift) {
           pasteShift(emp, dow);
         } else {
