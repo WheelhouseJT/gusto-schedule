@@ -244,6 +244,13 @@
     cursor: pointer;
     flex-shrink: 0;
   }
+  .copy-banner .banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .copy-banner .paste-week {
+    font-family: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 5px 12px; border-radius: 7px;
+    border: 1px solid var(--gold); background: var(--gold); color: #2A2110; cursor: pointer;
+  }
+  .copy-banner .paste-week:disabled { opacity: 0.45; cursor: default; }
 
   .grid-scroll {
     overflow-x: auto;
@@ -599,6 +606,7 @@
       <div class="week-label" id="weekLabel">—</div>
       <button class="arrow" id="nextWeek" aria-label="Next week">›</button>
       <button class="today-btn" id="thisWeekBtn">This week</button>
+      <button class="today-btn" id="copyWeekBtn" title="Copy every shift in this week">Copy week</button>
     </div>
   </header>
 
@@ -613,6 +621,14 @@
   <div class="copy-banner" id="copyBanner">
     <span id="copyBannerText"></span>
     <button class="cancel-copy" id="cancelCopyBtn">Cancel</button>
+  </div>
+
+  <div class="copy-banner" id="weekBanner">
+    <span id="weekBannerText"></span>
+    <div class="banner-actions">
+      <button class="paste-week" id="pasteWeekBtn">Paste week here</button>
+      <button class="cancel-copy" id="cancelWeekBtn">Cancel</button>
+    </div>
   </div>
 
   <div class="grid-scroll">
@@ -649,6 +665,8 @@
   let editing = null; // {empId, dow}
   let copiedShift = null; // {start,end,location,type}
   let draggedEmpId = null;
+  let copiedWeek = null; // {weekStart, label, shifts:[...]}
+  let pastingWeek = false;
 
   function mondayOf(d) {
     const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -754,6 +772,9 @@
       if (e.key === 'Enter') addEmployee();
     });
     document.getElementById('cancelCopyBtn').addEventListener('click', exitCopyMode);
+    document.getElementById('copyWeekBtn').addEventListener('click', copyCurrentWeek);
+    document.getElementById('pasteWeekBtn').addEventListener('click', askPasteWeek);
+    document.getElementById('cancelWeekBtn').addEventListener('click', () => { copiedWeek = null; renderWeekBanner(); });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && copiedShift) exitCopyMode();
     });
@@ -808,6 +829,87 @@
     }
   }
 
+  function copyCurrentWeek() {
+    const shifts = Object.values(shiftsByKey).map(s => s.timeOff
+      ? { empId: s.empId, dow: s.dow, timeOff: true }
+      : { empId: s.empId, dow: s.dow, start: s.start, end: s.end, location: s.location, type: s.type, timeOff: false });
+    if (shifts.length === 0) { toast("This week has no shifts to copy."); return; }
+    copiedWeek = { weekStart: isoDate(currentWeekStart), label: weekLabel(currentWeekStart), shifts };
+    renderWeekBanner();
+    toast("Week copied — go to another week and paste it.");
+  }
+
+  function renderWeekBanner() {
+    const banner = document.getElementById('weekBanner');
+    if (!copiedWeek) { banner.classList.remove('show'); return; }
+    const sameWeek = copiedWeek.weekStart === isoDate(currentWeekStart);
+    const n = copiedWeek.shifts.length;
+    document.getElementById('weekBannerText').innerHTML = sameWeek
+      ? `Copied <strong>${escapeHtml(copiedWeek.label)}</strong> (${n} shift${n===1?'':'s'}) — use the arrows to go to the week you want to fill.`
+      : `Paste <strong>${escapeHtml(copiedWeek.label)}</strong> (${n} shift${n===1?'':'s'}) into <strong>${escapeHtml(weekLabel(currentWeekStart))}</strong>?`;
+    const btn = document.getElementById('pasteWeekBtn');
+    btn.disabled = sameWeek || pastingWeek;
+    btn.textContent = pastingWeek ? "Pasting…" : "Paste week here";
+    banner.classList.add('show');
+  }
+
+  function askPasteWeek() {
+    if (!copiedWeek || copiedWeek.weekStart === isoDate(currentWeekStart)) return;
+    if (!db) { toast("Storage unavailable — can't paste right now."); return; }
+    const existing = Object.keys(shiftsByKey).length;
+    if (existing === 0) { doPasteWeek("fill"); return; }
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `
+      <div class="confirm-box" id="confirmBox">
+        <div class="confirm-card" style="max-width:360px;">
+          <p>This week already has <strong>${existing} shift${existing===1?'':'s'}</strong>. How should the copied week go in?</p>
+          <div class="confirm-actions" style="flex-wrap:wrap;">
+            <button class="btn ghost" id="pwCancel">Cancel</button>
+            <button class="btn" id="pwFill">Only fill empty days</button>
+            <button class="btn primary" id="pwReplace">Replace whole week</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('pwCancel').addEventListener('click', closeConfirm);
+    document.getElementById('pwFill').addEventListener('click', () => { closeConfirm(); doPasteWeek("fill"); });
+    document.getElementById('pwReplace').addEventListener('click', () => { closeConfirm(); doPasteWeek("replace"); });
+    document.getElementById('confirmBox').addEventListener('click', (e) => {
+      if (e.target.id === 'confirmBox') closeConfirm();
+    });
+  }
+
+  async function doPasteWeek(mode) {
+    if (!copiedWeek || !db || pastingWeek) return;
+    pastingWeek = true; renderWeekBanner();
+    const wk = isoDate(currentWeekStart);
+    const empIds = new Set(employees.map(e => e.id));
+    const current = Object.assign({}, shiftsByKey);
+    const batch = db.batch();
+    let written = 0;
+    if (mode === "replace") {
+      Object.values(current).forEach(s => {
+        batch.delete(db.collection("shifts").doc(wk + "__" + s.empId + "__" + s.dow));
+      });
+    }
+    copiedWeek.shifts.forEach(s => {
+      if (!empIds.has(s.empId)) return; // employee since removed
+      if (mode === "fill" && current[keyFor(s.empId, s.dow)]) return;
+      batch.set(db.collection("shifts").doc(wk + "__" + s.empId + "__" + s.dow),
+        Object.assign({}, s, { weekStart: wk }));
+      written++;
+    });
+    try {
+      await batch.commit();
+      copiedWeek = null;
+      toast(`Pasted ${written} shift${written===1?'':'s'}.`);
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't paste the week — nothing was changed.");
+    }
+    pastingWeek = false;
+    renderWeekBanner();
+  }
+
   async function moveEmployee(empId, dir) {
     const idx = employees.findIndex(e => e.id === empId);
     if (idx === -1) return;
@@ -848,6 +950,7 @@
 
   function onWeekChanged() {
     renderWeekLabel();
+    renderWeekBanner();
     subscribeShiftsForWeek();
     render();
   }
