@@ -155,6 +155,8 @@
     font-family: inherit;
   }
   .today-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .today-btn:disabled { opacity: 0.4; cursor: default; }
+  .today-btn:disabled:hover { color: var(--ink-soft); border-color: var(--line); }
 
   .controls {
     display: flex;
@@ -607,6 +609,7 @@
       <button class="arrow" id="nextWeek" aria-label="Next week">›</button>
       <button class="today-btn" id="thisWeekBtn">This week</button>
       <button class="today-btn" id="copyWeekBtn" title="Copy every shift in this week">Copy week</button>
+      <button class="today-btn" id="undoBtn" title="Undo last change (Ctrl+Z)" disabled>↶ Undo</button>
     </div>
   </header>
 
@@ -667,6 +670,8 @@
   let draggedEmpId = null;
   let copiedWeek = null; // {weekStart, label, shifts:[...]}
   let pastingWeek = false;
+  let undoStack = []; // [{label, changes:[{id, before}]}] — newest last
+  let undoing = false;
 
   function mondayOf(d) {
     const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -773,6 +778,15 @@
     });
     document.getElementById('cancelCopyBtn').addEventListener('click', exitCopyMode);
     document.getElementById('copyWeekBtn').addEventListener('click', copyCurrentWeek);
+    document.getElementById('undoBtn').addEventListener('click', undoLast);
+    document.addEventListener('keydown', (e) => {
+      if (!((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z')) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      if (document.getElementById('modalRoot').innerHTML.trim()) return;
+      e.preventDefault();
+      undoLast();
+    });
     document.getElementById('pasteWeekBtn').addEventListener('click', askPasteWeek);
     document.getElementById('cancelWeekBtn').addEventListener('click', () => { copiedWeek = null; renderWeekBanner(); });
     document.addEventListener('keydown', (e) => {
@@ -821,12 +835,52 @@
             type: copiedShift.type,
             timeOff: false
           };
+      const undoEntry = snapBefore(emp.id, dow);
       await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set(payload);
+      pushUndo(copiedShift.timeOff ? "paste time off" : "paste shift", [undoEntry]);
       toast(copiedShift.timeOff ? "Time off pasted." : "Shift pasted.");
     } catch (e) {
       console.error(e);
       toast("Couldn't paste.");
     }
+  }
+
+  // ---- Undo ----
+  function snapBefore(empId, dow) {
+    const s = shiftsByKey[keyFor(empId, dow)];
+    return { id: shiftDocId(empId, dow), before: s ? Object.assign({}, s) : null };
+  }
+  function pushUndo(label, changes) {
+    if (!changes.length) return;
+    undoStack.push({ label, changes });
+    if (undoStack.length > 30) undoStack.shift();
+    refreshUndoBtn();
+  }
+  function refreshUndoBtn() {
+    const btn = document.getElementById('undoBtn');
+    btn.disabled = undoStack.length === 0 || undoing;
+    btn.title = undoStack.length
+      ? `Undo: ${undoStack[undoStack.length - 1].label} (Ctrl+Z)`
+      : "Nothing to undo";
+  }
+  async function undoLast() {
+    if (undoing || !undoStack.length || !db) return;
+    const entry = undoStack[undoStack.length - 1];
+    undoing = true; refreshUndoBtn();
+    try {
+      const batch = db.batch();
+      entry.changes.forEach(c => {
+        const ref = db.collection("shifts").doc(c.id);
+        if (c.before) batch.set(ref, c.before); else batch.delete(ref);
+      });
+      await batch.commit();
+      undoStack.pop();
+      toast(`Undone: ${entry.label}`);
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't undo — try again.");
+    }
+    undoing = false; refreshUndoBtn();
   }
 
   function copyCurrentWeek() {
@@ -886,20 +940,31 @@
     const current = Object.assign({}, shiftsByKey);
     const batch = db.batch();
     let written = 0;
+    const touched = {}; // docId -> previous data (or null)
+    const remember = (empId, dow) => {
+      const id = wk + "__" + empId + "__" + dow;
+      if (!(id in touched)) {
+        const prev = current[keyFor(empId, dow)];
+        touched[id] = prev ? Object.assign({}, prev) : null;
+      }
+    };
     if (mode === "replace") {
       Object.values(current).forEach(s => {
+        remember(s.empId, s.dow);
         batch.delete(db.collection("shifts").doc(wk + "__" + s.empId + "__" + s.dow));
       });
     }
     copiedWeek.shifts.forEach(s => {
       if (!empIds.has(s.empId)) return; // employee since removed
       if (mode === "fill" && current[keyFor(s.empId, s.dow)]) return;
+      remember(s.empId, s.dow);
       batch.set(db.collection("shifts").doc(wk + "__" + s.empId + "__" + s.dow),
         Object.assign({}, s, { weekStart: wk }));
       written++;
     });
     try {
       await batch.commit();
+      pushUndo("paste week", Object.keys(touched).map(id => ({ id, before: touched[id] })));
       copiedWeek = null;
       toast(`Pasted ${written} shift${written===1?'':'s'}.`);
     } catch (e) {
@@ -1130,7 +1195,9 @@
       document.getElementById('clearShift').addEventListener('click', async () => {
         if (!db) { closeShiftModal(); return; }
         try {
+          const undoEntry = snapBefore(emp.id, dow);
           await db.collection("shifts").doc(shiftDocId(emp.id, dow)).delete();
+          pushUndo("clear shift", [undoEntry]);
           toast("Shift cleared.");
         } catch (e) { console.error(e); toast("Couldn't clear shift."); }
         closeShiftModal();
@@ -1146,12 +1213,14 @@
       if (!db) { toast("Storage unavailable — can't save."); return; }
       if (timeOffCheck.checked) {
         try {
+          const undoEntry = snapBefore(emp.id, dow);
           await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set({
             empId: emp.id,
             weekStart: isoDate(currentWeekStart),
             dow,
             timeOff: true
           });
+          pushUndo("save time off", [undoEntry]);
           toast("Time off saved.");
         } catch (e) { console.error(e); toast("Couldn't save."); }
         closeShiftModal();
@@ -1162,6 +1231,7 @@
       const location = document.getElementById('locSelect').value;
       if (!start || !end) { toast("Set a start and end time."); return; }
       try {
+        const undoEntry = snapBefore(emp.id, dow);
         await db.collection("shifts").doc(shiftDocId(emp.id, dow)).set({
           empId: emp.id,
           weekStart: isoDate(currentWeekStart),
@@ -1170,6 +1240,7 @@
           type: selType,
           timeOff: false
         });
+        pushUndo("save shift", [undoEntry]);
         toast("Shift saved.");
       } catch (e) { console.error(e); toast("Couldn't save shift."); }
       closeShiftModal();
