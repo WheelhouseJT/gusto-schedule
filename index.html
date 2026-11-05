@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wheelhouse Schedule</title>
+<title>Wheelhouse In-Store Schedule</title>
+<link rel="icon" href="https://wheelhousecards.com/wp-content/uploads/2026/09/cropped-WEBICON-270x270.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
   const firebaseConfig = {
@@ -21,75 +23,38 @@
   firebase.initializeApp(firebaseConfig);
 </script>
 <style>
+  /* Wheelhouse brand: Built Titling headings, Wheelhouse blue + gold, black text. Light theme to match wheelhousecards.com */
+  @font-face{font-family:"BuiltTitling";src:url("https://wheelhousecards.com/wp-content/uploads/2023/11/BuiltTitlingRg-Regular-400.ttf") format("truetype");font-weight:400;font-display:swap}
+  @font-face{font-family:"BuiltTitling";src:url("https://wheelhousecards.com/wp-content/uploads/2023/11/built_titling_sb.ttf") format("truetype");font-weight:600;font-display:swap}
+  @font-face{font-family:"BuiltTitling";src:url("https://wheelhousecards.com/wp-content/uploads/2023/11/BuiltTitlingRg-Bold-700.ttf") format("truetype");font-weight:700;font-display:swap}
   :root {
-    --paper: #F6F3EC;
+    --blue: #4472C3;
+    --blue-dk: #2f5aa3;
+    --black: #000000;
+    --paper: #f5f6f8;
     --paper-raised: #FFFFFF;
-    --ink: #232A2E;
-    --ink-soft: #5B6469;
-    --line: #DEDACB;
-    --line-strong: #C9C3AE;
-    --gold: #B8892B;
-    --gold-soft: #E8D9AF;
-    --full: #2F6B44;
-    --full-text: #F6F3EC;
-    --part-bg: rgba(58, 138, 87, 0.20);
-    --part-border: rgba(58, 138, 87, 0.55);
-    --part-text: #1F4A30;
-    --danger: #A6432F;
-    --danger-soft: rgba(166, 67, 47, 0.12);
-    --timeoff-bg: #E6E2D3;
-    --timeoff-border: #C9C3AE;
-    --timeoff-text: #4A4F42;
-    --timeoff-sub: #8B8873;
-    --shadow: 0 1px 2px rgba(35,42,46,0.06), 0 4px 14px rgba(35,42,46,0.06);
-    --radius: 10px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --paper: #1B1E1A;
-      --paper-raised: #242823;
-      --ink: #EDE9DD;
-      --ink-soft: #A8A392;
-      --line: #3A3D35;
-      --line-strong: #4A4D42;
-      --gold: #D9AE5C;
-      --gold-soft: #4A3C1E;
-      --full: #4C9A6A;
-      --full-text: #10160F;
-      --part-bg: rgba(76, 154, 106, 0.22);
-      --part-border: rgba(76, 154, 106, 0.5);
-      --part-text: #A9E0BC;
-      --danger: #D9705A;
-      --danger-soft: rgba(217, 112, 90, 0.16);
-      --timeoff-bg: #35382F;
-      --timeoff-border: #4A4D42;
-      --timeoff-text: #D8D4C2;
-      --timeoff-sub: #99977F;
-      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.3);
-    }
-  }
-  :root[data-theme="dark"] {
-    --paper: #1B1E1A;
-    --paper-raised: #242823;
-    --ink: #EDE9DD;
-    --ink-soft: #A8A392;
-    --line: #3A3D35;
-    --line-strong: #4A4D42;
-    --gold: #D9AE5C;
-    --gold-soft: #4A3C1E;
-    --full: #4C9A6A;
-    --full-text: #10160F;
-    --part-bg: rgba(76, 154, 106, 0.22);
-    --part-border: rgba(76, 154, 106, 0.5);
-    --part-text: #A9E0BC;
-    --danger: #D9705A;
-    --danger-soft: rgba(217, 112, 90, 0.16);
-    --timeoff-bg: #35382F;
-    --timeoff-border: #4A4D42;
-    --timeoff-text: #D8D4C2;
-    --timeoff-sub: #99977F;
-    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 14px rgba(0,0,0,0.3);
+    --ink: #111111;
+    --ink-soft: #5f6670;
+    --line: #d9dde4;
+    --line-strong: #c3c9d3;
+    --gold: #D79431;
+    --gold-soft: #fbefd9;
+    --full: #4472C3;
+    --full-text: #FFFFFF;
+    --part-bg: #e3ebf8;
+    --part-border: #9db4e0;
+    --part-text: #2f5aa3;
+    --danger: #b3261e;
+    --danger-soft: #f9e1df;
+    --timeoff-bg: #eceef2;
+    --timeoff-border: #c3c9d3;
+    --timeoff-text: #3d434b;
+    --timeoff-sub: #7a818b;
+    --shadow: 0 1px 2px rgba(10,15,25,0.05), 0 4px 14px rgba(10,15,25,0.05);
+    --radius: 8px;
+    --display: "BuiltTitling","Barlow Condensed","Arial Narrow",sans-serif;
+    --body: "Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+    color-scheme: light;
   }
 
   * { box-sizing: border-box; }
@@ -97,12 +62,22 @@
     margin: 0; padding: 0;
     background: var(--paper);
     color: var(--ink);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: var(--body);
+    font-size: 14px;
     min-height: 100%;
   }
-  body { padding: 20px 20px 60px; }
+  body { padding: 0 0 60px; }
+  [hidden] { display: none !important; }
+  .brand { background: var(--paper-raised); border-bottom: 4px solid var(--gold); box-shadow: 0 1px 0 var(--line); margin-bottom: 20px; }
+  .brand-in { max-width: 1400px; margin: 0 auto; padding: 10px max(16px, env(safe-area-inset-left, 0px)); display: flex; align-items: center; gap: 14px; }
+  .brand img { height: 48px; width: auto; max-width: 55vw; display: block; }
+  .brand .tag { font-family: var(--display); color: var(--black); border-left: 2px solid var(--blue); padding-left: 14px; font-size: 15px; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+  .brand .who { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-soft); }
+  .gate { max-width: 520px; margin: 40px auto; text-align: center; background: var(--paper-raised); border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: var(--radius); padding: 30px 22px; box-shadow: var(--shadow); }
+  .gate p { margin: 0 0 18px; font-size: 15px; }
+  .gate .err { color: var(--danger); margin-top: 14px; font-size: 13px; }
 
-  .wrap { max-width: 1400px; margin: 0 auto; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-left, 0px)); }
 
   header.top {
     display: flex;
@@ -113,10 +88,12 @@
     margin-bottom: 18px;
   }
   h1 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 28px;
-    letter-spacing: -0.01em;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 38px;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: .02em;
     margin: 0;
     color: var(--ink);
   }
@@ -205,19 +182,23 @@
     color: var(--ink);
     width: 170px;
   }
-  .add-emp input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .add-emp input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
   .add-emp button {
     font-family: inherit;
     font-size: 13.5px;
     font-weight: 600;
     padding: 7px 14px;
     border-radius: 7px;
-    border: 1px solid var(--gold);
-    background: var(--gold);
-    color: #2A2110;
+    border: 1px solid var(--blue);
+    background: var(--blue);
+    color: #fff;
     cursor: pointer;
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: 15px;
   }
-  .add-emp button:hover { filter: brightness(1.05); }
+  .add-emp button:hover { background: var(--blue-dk); border-color: var(--blue-dk); }
 
   .copy-banner {
     display: none;
@@ -250,12 +231,13 @@
   .copy-banner .paste-week {
     font-family: inherit; font-size: 12.5px; font-weight: 600;
     padding: 5px 12px; border-radius: 7px;
-    border: 1px solid var(--gold); background: var(--gold); color: #2A2110; cursor: pointer;
+    border: 1px solid var(--blue); background: var(--blue); color: #fff; cursor: pointer;
   }
   .copy-banner .paste-week:disabled { opacity: 0.45; cursor: default; }
 
   .grid-scroll {
     overflow-x: auto;
+    border-top: 3px solid var(--blue) !important;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--paper-raised);
@@ -287,16 +269,21 @@
   thead th {
     position: sticky;
     top: 0;
-    background: var(--paper-raised);
+    background: var(--black);
     z-index: 3;
-    padding: 12px 10px;
+    padding: 10px 10px;
     text-align: left;
+    font-family: var(--display);
     font-weight: 600;
-    font-size: 13px;
-    color: var(--ink);
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #fff;
+    border-right-color: #333 !important;
   }
+  thead th.name-col-head { background: var(--black); }
   thead th .dow { display: block; }
-  thead th .ddate { display: block; font-weight: 400; color: var(--ink-soft); font-size: 12px; margin-top: 1px; }
+  thead th .ddate { display: block; font-family: var(--body); font-weight: 500; color: #c9ccd2; font-size: 12px; letter-spacing: 0; margin-top: 1px; }
 
   td.name-col {
     padding: 0;
@@ -443,7 +430,7 @@
   }
   .copy-banner .del-selected:disabled { opacity: 0.45; cursor: default; }
   .shift-box:hover { border-color: var(--gold); color: var(--ink); }
-  .shift-box:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .shift-box:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
   .shift-box.full {
     background: var(--full);
@@ -469,7 +456,7 @@
     text-align: center;
     color: var(--ink-soft);
   }
-  .empty-state .big { font-family: 'Fraunces', serif; font-size: 19px; color: var(--ink); margin-bottom: 6px; }
+  .empty-state .big { font-family: var(--display); text-transform: uppercase; letter-spacing: .03em; font-size: 19px; color: var(--ink); margin-bottom: 6px; }
 
   .legend {
     display: flex;
@@ -503,7 +490,7 @@
     box-shadow: 0 12px 40px rgba(0,0,0,0.25);
   }
   .modal h2 {
-    font-family: 'Fraunces', serif;
+    font-family: var(--display); text-transform: uppercase; letter-spacing: .03em;
     font-size: 19px;
     margin: 0 0 3px;
     font-weight: 600;
@@ -529,7 +516,7 @@
     background: var(--paper);
     color: var(--ink);
   }
-  input[type="time"]:focus, select.modal-select:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  input[type="time"]:focus, select.modal-select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
 
   .type-toggle { display: flex; gap: 8px; }
   .type-toggle button {
@@ -565,7 +552,8 @@
     background: var(--paper);
     color: var(--ink);
   }
-  .btn.primary { background: var(--gold); border-color: var(--gold); color: #2A2110; }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 15px; }
+  .btn.primary:hover { background: var(--blue-dk); border-color: var(--blue-dk); }
   .btn.ghost { background: transparent; border-color: transparent; color: var(--ink-soft); }
   .btn.ghost:hover { color: var(--danger); }
   .btn:hover { filter: brightness(1.04); }
@@ -609,15 +597,31 @@
   @media (max-width: 640px) {
     body { padding: 14px 10px 50px; }
     h1 { font-size: 22px; }
-    .week-label { min-width: 150px; font-size: 13px; }
+    .week-label { min-width: 0; flex: 1; font-size: 13px; }
+    .week-nav { flex-wrap: wrap; width: 100%; }
+    .brand img { height: 38px; }
+    .brand .tag { display: none; }
+    #whoEmail { display: none; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="brand"><div class="brand-in">
+  <img src="https://wheelhousecards.com/wp-content/uploads/2023/11/unnamed-3-removebg-preview.png" alt="Wheelhouse">
+  <span class="tag">Staff Tools</span>
+  <div class="who" id="who" hidden><span id="whoEmail"></span><button class="today-btn" id="signOutBtn">Sign out</button></div>
+</div></div>
+
+<div class="gate" id="gate">
+  <p id="gateMsg">Checking your sign-in…</p>
+  <button class="btn primary" id="signInBtn" hidden>Sign in with Google</button>
+  <div class="err" id="gateErr"></div>
+</div>
+
+<div class="wrap" id="app" hidden>
   <header class="top">
     <div>
-      <h1>Wheelhouse Schedule</h1>
+      <h1>In-Store <span style="color:var(--blue)">Schedule</span></h1>
       <div class="sub" id="statusLine">Loading…</div>
     </div>
     <div class="week-nav">
@@ -754,22 +758,83 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  const AUTH_MSG = {
+    "auth/unauthorized-domain": "This web address isn't on Firebase's approved list. In Firebase: Authentication → Settings → Authorized domains → add " + location.hostname + ".",
+    "auth/operation-not-allowed": "Google sign-in is turned off. In Firebase: Authentication → Sign-in method → enable Google.",
+    "auth/configuration-not-found": "Sign-in hasn't been set up yet. In Firebase: Authentication → Get started, then enable Google.",
+    "auth/popup-closed-by-user": "The sign-in window was closed before finishing. Try again.",
+    "auth/cancelled-popup-request": "Another sign-in window was already open. Try again.",
+    "auth/network-request-failed": "Couldn't reach Google. Check your internet connection and try again."
+  };
+  function showGate(msg, showButton) {
+    document.getElementById('app').hidden = true;
+    document.getElementById('gate').hidden = false;
+    document.getElementById('gateMsg').textContent = msg;
+    document.getElementById('signInBtn').hidden = !showButton;
+  }
+  function showAuthErr(code) {
+    document.getElementById('gateErr').textContent = AUTH_MSG[code] || ("Sign-in failed (" + code + ").");
+  }
+  function stopListening() {
+    if (unsubEmployees) { unsubEmployees(); unsubEmployees = null; }
+    if (unsubShifts) { unsubShifts(); unsubShifts = null; }
+    employees = []; shiftsByKey = {}; undoStack = []; refreshUndoBtn();
+  }
+  function accessDenied() {
+    const u = firebase.auth().currentUser;
+    stopListening();
+    showGate((u ? u.email : "This account") + " isn't on the staff list for the schedule. Ask JT to add you, or sign in with a different account.", true);
+  }
+
+  // Staff-only Google sign-in. Leave false until Google sign-in is enabled in Firebase
+  // (Authentication → Sign-in method → Google) and the staff-only rules are published.
+  const REQUIRE_SIGN_IN = false;
+
   async function init() {
-    document.getElementById('statusLine').textContent = "Connecting…";
-    try {
-      db = firebase.firestore();
-      document.getElementById('statusLine').textContent = "";
-    } catch (e) {
-      console.error(e);
-      db = null;
-      document.getElementById('statusLine').textContent = "Couldn't connect to storage — changes won't be saved.";
-    }
+    db = firebase.firestore();
+    const auth = firebase.auth();
     buildStoreTabs();
     bindTopControls();
-    subscribeEmployees();
-    subscribeShiftsForWeek();
     renderWeekLabel();
-    render();
+    if (!REQUIRE_SIGN_IN) {
+      document.getElementById('gate').hidden = true;
+      document.getElementById('app').hidden = false;
+      document.getElementById('statusLine').textContent = "";
+      subscribeEmployees();
+      subscribeShiftsForWeek();
+      render();
+      return;
+    }
+    document.getElementById('signInBtn').addEventListener('click', () => {
+      document.getElementById('gateErr').textContent = "";
+      const prov = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(prov).catch(e => {
+        const c = (e && e.code) || "unknown";
+        if (c === "auth/popup-blocked" || c === "auth/operation-not-supported-in-this-environment") {
+          auth.signInWithRedirect(prov).catch(e2 => showAuthErr((e2 && e2.code) || "unknown"));
+          return;
+        }
+        showAuthErr(c);
+      });
+    });
+    document.getElementById('signOutBtn').addEventListener('click', () => auth.signOut());
+    auth.getRedirectResult().catch(e => showAuthErr((e && e.code) || "unknown"));
+    auth.onAuthStateChanged(u => {
+      stopListening();
+      if (!u) {
+        document.getElementById('who').hidden = true;
+        showGate("Sign in with your Wheelhouse Google account to see the schedule.", true);
+        return;
+      }
+      document.getElementById('whoEmail').textContent = u.email;
+      document.getElementById('who').hidden = false;
+      document.getElementById('gate').hidden = true;
+      document.getElementById('app').hidden = false;
+      document.getElementById('statusLine').textContent = "";
+      subscribeEmployees();
+      subscribeShiftsForWeek();
+      render();
+    });
   }
 
   function buildStoreTabs() {
@@ -1144,6 +1209,7 @@
       },
       (err) => {
         console.error(err);
+        if (err && err.code === "permission-denied") { accessDenied(); return; }
         toast("Couldn't load employees.");
       }
     );
@@ -1165,6 +1231,7 @@
       },
       (err) => {
         console.error(err);
+        if (err && err.code === "permission-denied") { accessDenied(); return; }
         toast("Couldn't load this week's schedule.");
       }
     );
