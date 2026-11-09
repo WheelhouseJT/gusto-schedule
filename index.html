@@ -603,6 +603,83 @@
     .brand .tag { display: none; }
     #whoEmail { display: none; }
   }
+
+  /* ===== View tabs ===== */
+  .view-tabs { display: inline-flex; background: var(--paper-raised); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; box-shadow: var(--shadow); }
+  .view-tabs button { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 15px; border: 0; background: transparent; color: var(--ink-soft); padding: 7px 16px; border-radius: 999px; cursor: pointer; }
+  .view-tabs button.active { background: var(--black); color: #fff; }
+  .view-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  #app.view-month .week-only { display: none !important; }
+  #app.view-week .month-only { display: none !important; }
+
+  /* ===== Monthly planner ===== */
+  .month-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 8px; box-shadow: var(--shadow); }
+  .month-bar button.arrow { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 15px; cursor: pointer; }
+  .month-bar button.arrow:hover { background: var(--gold-soft); border-color: var(--gold); }
+  .month-label { font-family: var(--display); font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: .04em; min-width: 170px; text-align: center; }
+  .month-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 16px; align-items: start; }
+  .roster { position: sticky; top: 12px; background: var(--paper-raised); border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: var(--radius); box-shadow: var(--shadow); max-height: calc(100vh - 24px); display: flex; flex-direction: column; }
+  .roster h3 { font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; font-size: 16px; margin: 0; padding: 10px 12px 4px; }
+  .roster .roster-hint { font-size: 11.5px; color: var(--ink-soft); padding: 0 12px 8px; border-bottom: 1px solid var(--line); line-height: 1.35; }
+  .roster-list { overflow-y: auto; padding: 6px; display: grid; gap: 3px; }
+  .roster-item { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent; cursor: grab; font-weight: 600; font-size: 13.5px; user-select: none; background: transparent; font-family: inherit; color: var(--ink); text-align: left; width: 100%; }
+  .roster-item:hover { background: var(--paper); border-color: var(--line); }
+  .roster-item.on { background: var(--gold-soft); border-color: var(--gold); }
+  .roster-item .cnt { font-size: 11px; font-weight: 500; color: var(--ink-soft); }
+  .month-weeks { display: grid; gap: 14px; min-width: 0; }
+  .mweek { overflow-x: auto; border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow); }
+  table.mgrid { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; table-layout: fixed; }
+  table.mgrid th, table.mgrid td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  table.mgrid th:last-child, table.mgrid td:last-child { border-right: none; }
+  table.mgrid tr:last-child td { border-bottom: none; }
+  table.mgrid col.rowlab { width: 96px; }
+  table.mgrid thead th { background: var(--black); color: #fff; font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; font-size: 14px; font-weight: 600; padding: 7px 8px; text-align: left; border-right-color: #333; }
+  table.mgrid thead th .md { font-family: var(--body); letter-spacing: 0; font-size: 12px; font-weight: 600; color: #fff; background: var(--gold); border-radius: 4px; padding: 1px 6px; margin-left: 6px; }
+  table.mgrid thead th.out .md { background: #444; color: #bbb; }
+  table.mgrid thead th.today .md { background: var(--blue); }
+  table.mgrid td.rl { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 14px; font-weight: 700; padding: 6px 8px; background: var(--paper); vertical-align: middle; }
+  table.mgrid tr.r-off td.rl { color: var(--danger); }
+  table.mgrid tr.r-notes td.rl { color: var(--ink-soft); }
+  table.mgrid td.mc { padding: 4px; vertical-align: top; cursor: pointer; height: 44px; }
+  table.mgrid td.mc:hover { background: #fafbfc; }
+  table.mgrid td.mc.out { background: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(0,0,0,0.018) 6px, rgba(0,0,0,0.018) 12px); }
+  table.mgrid td.mc.drop { background: var(--gold-soft); box-shadow: inset 0 0 0 2px var(--gold); }
+  table.mgrid tr.r-off td.mc { background: rgba(179, 38, 30, 0.03); }
+  .chips { display: flex; flex-wrap: wrap; gap: 3px; }
+  .chip { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 600; line-height: 1; padding: 4px 6px; border-radius: 5px; background: var(--part-bg); color: var(--part-text); border: 1px solid var(--part-border); white-space: nowrap; }
+  .chip.full { background: var(--full); color: var(--full-text); border-color: var(--full); }
+  .chip.off { background: var(--danger-soft); color: var(--danger); border-color: rgba(179,38,30,.35); }
+  .chip.hl { box-shadow: 0 0 0 2px var(--gold); }
+  .chip.dim { opacity: .35; }
+  .chip .t { font-weight: 500; opacity: .85; font-size: 11px; }
+  .chip .x { border: 0; background: transparent; color: inherit; font-size: 11px; padding: 0 0 0 2px; cursor: pointer; opacity: .6; line-height: 1; }
+  .chip .x:hover { opacity: 1; }
+  .note-text { font-size: 12px; color: var(--danger); white-space: pre-wrap; line-height: 1.3; padding: 2px; }
+  .add-hint { font-size: 11.5px; color: var(--line-strong); padding: 4px 2px; }
+  td.mc:hover .add-hint { color: var(--ink-soft); }
+  .month-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; align-items: center; }
+  .month-legend .chip { pointer-events: none; }
+
+  /* picker */
+  .modal.picker { max-width: 420px; }
+  .pick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; max-height: 50vh; overflow-y: auto; margin: 4px 0 6px; }
+  .pick-btn { font-family: inherit; font-size: 13px; font-weight: 600; text-align: left; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+  .pick-btn small { font-weight: 500; font-size: 11px; color: var(--ink-soft); }
+  .pick-btn.on { background: var(--full); border-color: var(--full); color: #fff; }
+  .pick-btn.on small { color: rgba(255,255,255,.8); }
+  .pick-btn.on.offmode { background: var(--danger); border-color: var(--danger); }
+  .pick-btn.warn small { color: var(--danger); }
+  .modal textarea.note-in { width: 100%; min-height: 90px; font: inherit; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); resize: vertical; }
+
+  @media (max-width: 760px) {
+    .month-layout { grid-template-columns: 1fr; }
+    .roster { position: static; max-height: none; }
+    .roster-list { display: flex; flex-wrap: wrap; }
+    .roster-item { width: auto; border-color: var(--line); }
+    .month-label { min-width: 0; flex: 1; font-size: 17px; }
+    .view-tabs { width: 100%; }
+    .view-tabs button { flex: 1; font-size: 13px; padding: 7px 8px; }
+  }
 </style>
 </head>
 <body>
@@ -624,6 +701,14 @@
       <h1>In-Store <span style="color:var(--blue)">Schedule</span></h1>
       <div class="sub" id="statusLine">Loading…</div>
     </div>
+    <div class="view-tabs" role="tablist">
+      <button data-view="month" role="tab">Monthly Planner</button>
+      <button data-view="week" role="tab">Weekly Schedule</button>
+    </div>
+  </header>
+
+  <div class="view-row week-only">
+    <div></div>
     <div class="week-nav">
       <button class="arrow" id="prevWeek" aria-label="Previous week">‹</button>
       <div class="week-label" id="weekLabel">—</div>
@@ -633,8 +718,37 @@
       <button class="today-btn" id="selectBtn" title="Select several shifts to delete at once">Select</button>
       <button class="today-btn" id="undoBtn" title="Undo last change (Ctrl+Z)" disabled>↶ Undo</button>
     </div>
-  </header>
+  </div>
 
+  <div class="month-only" id="monthView">
+    <div class="view-row">
+      <div class="month-bar">
+        <button class="arrow" id="prevMonth" aria-label="Previous month">‹</button>
+        <div class="month-label" id="monthLabel">—</div>
+        <button class="arrow" id="nextMonth" aria-label="Next month">›</button>
+        <button class="today-btn" id="thisMonthBtn">This month</button>
+        <button class="today-btn" id="undoBtnM" title="Undo last change (Ctrl+Z)" disabled>↶ Undo</button>
+      </div>
+    </div>
+    <div class="month-layout">
+      <aside class="roster">
+        <h3>Team</h3>
+        <div class="roster-hint">Drag a name onto a day. Click a name to highlight everywhere they're scheduled.</div>
+        <div class="roster-list" id="rosterList"></div>
+      </aside>
+      <div>
+        <div class="month-weeks" id="monthWeeks"></div>
+        <div class="month-legend">
+          <span class="chip full">Name</span> Full time
+          <span class="chip">Name</span> Part time
+          <span class="chip off">Name</span> Not available
+          <span>· Anything added here shows up on the Weekly Schedule automatically</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="week-only">
   <div class="controls">
     <div class="store-tabs" id="storeTabs"></div>
     <div class="add-emp">
@@ -679,6 +793,7 @@
     <div class="legend-item"><span class="swatch part"></span> Part time</div>
     <div class="legend-item">Click any square to set a shift · store view filters by location</div>
   </div>
+  </div>
 </div>
 
 <div id="modalRoot"></div>
@@ -706,6 +821,17 @@
   let selectMode = false;
   let selectedKeys = new Set(); // keyFor(empId, dow)
   let deletingSel = false;
+  // Monthly planner
+  const STORE_LABEL = { Flagship: "Wayne" };
+  const storeLabel = st => STORE_LABEL[st] || st;
+  let view = "week";
+  try { if (localStorage.getItem("ws_view") === "month") view = "month"; } catch (e) {}
+  let monthCursor = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
+  let monthShifts = {};  // "YYYY-MM-DD|empId" -> shift doc data
+  let dayNotes = {};     // "YYYY-MM-DD" -> text
+  let unsubMonth = null, unsubNotes = null;
+  let highlightEmp = null;
+  let dragEmp = null;
 
   function mondayOf(d) {
     const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -778,6 +904,9 @@
   function stopListening() {
     if (unsubEmployees) { unsubEmployees(); unsubEmployees = null; }
     if (unsubShifts) { unsubShifts(); unsubShifts = null; }
+    if (unsubMonth) { unsubMonth(); unsubMonth = null; }
+    if (unsubNotes) { unsubNotes(); unsubNotes = null; }
+    monthShifts = {}; dayNotes = {};
     employees = []; shiftsByKey = {}; undoStack = []; refreshUndoBtn();
   }
   function accessDenied() {
@@ -795,6 +924,8 @@
     const auth = firebase.auth();
     buildStoreTabs();
     bindTopControls();
+    bindMonthControls();
+    setView(view);
     renderWeekLabel();
     if (!REQUIRE_SIGN_IN) {
       document.getElementById('gate').hidden = true;
@@ -802,6 +933,7 @@
       document.getElementById('statusLine').textContent = "";
       subscribeEmployees();
       subscribeShiftsForWeek();
+      subscribeMonth();
       render();
       return;
     }
@@ -833,14 +965,319 @@
       document.getElementById('statusLine').textContent = "";
       subscribeEmployees();
       subscribeShiftsForWeek();
+      subscribeMonth();
       render();
     });
+  }
+
+  // ===================== MONTHLY PLANNER =====================
+  function setView(v) {
+    view = v;
+    try { localStorage.setItem("ws_view", v); } catch (e) {}
+    const app = document.getElementById('app');
+    app.classList.toggle('view-month', v === 'month');
+    app.classList.toggle('view-week', v === 'week');
+    document.querySelectorAll('.view-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+    if (v === 'month') { if (copiedShift) exitCopyMode(); if (selectMode) exitSelectMode(); renderMonth(); }
+  }
+  function monthWeeks() {
+    const first = monthCursor;
+    const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+    const weeks = [];
+    for (let m = mondayOf(first); m <= last; m = addDays(m, 7)) weeks.push(new Date(m));
+    return weeks;
+  }
+  function dateOfShift(sh) {
+    const [y, mo, d] = sh.weekStart.split('-').map(Number);
+    return isoDate(addDays(new Date(y, mo - 1, d), sh.dow));
+  }
+  function bindMonthControls() {
+    document.querySelectorAll('.view-tabs button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
+    document.getElementById('prevMonth').addEventListener('click', () => { monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1); subscribeMonth(); renderMonth(); });
+    document.getElementById('nextMonth').addEventListener('click', () => { monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1); subscribeMonth(); renderMonth(); });
+    document.getElementById('thisMonthBtn').addEventListener('click', () => { const d = new Date(); monthCursor = new Date(d.getFullYear(), d.getMonth(), 1); subscribeMonth(); renderMonth(); });
+    document.getElementById('undoBtnM').addEventListener('click', undoLast);
+
+    const weeksEl = document.getElementById('monthWeeks');
+    weeksEl.addEventListener('click', (e) => {
+      const x = e.target.closest('.chip .x');
+      if (x) { e.stopPropagation(); removeFromDay(x.dataset.emp, x.dataset.date); return; }
+      const td = e.target.closest('td.mc');
+      if (!td) return;
+      if (td.dataset.row === 'notes') openNoteModal(td.dataset.date);
+      else openPicker(td.dataset.row, td.dataset.date);
+    });
+    weeksEl.addEventListener('dragover', (e) => {
+      const td = e.target.closest('td.mc');
+      if (!td || !dragEmp || td.dataset.row === 'notes') return;
+      e.preventDefault();
+      weeksEl.querySelectorAll('td.drop').forEach(t => { if (t !== td) t.classList.remove('drop'); });
+      td.classList.add('drop');
+    });
+    weeksEl.addEventListener('dragleave', (e) => {
+      const td = e.target.closest('td.mc');
+      if (td && !td.contains(e.relatedTarget)) td.classList.remove('drop');
+    });
+    weeksEl.addEventListener('drop', (e) => {
+      const td = e.target.closest('td.mc');
+      weeksEl.querySelectorAll('td.drop').forEach(t => t.classList.remove('drop'));
+      if (!td || !dragEmp || td.dataset.row === 'notes') return;
+      e.preventDefault();
+      const empId = dragEmp; dragEmp = null;
+      placeOnDay(empId, td.dataset.date, td.dataset.row);
+    });
+
+    const roster = document.getElementById('rosterList');
+    roster.addEventListener('dragstart', (e) => {
+      const it = e.target.closest('.roster-item');
+      if (!it) return;
+      dragEmp = it.dataset.emp;
+      e.dataTransfer.effectAllowed = 'copy';
+      try { e.dataTransfer.setData('text/plain', dragEmp); } catch (err) {}
+    });
+    roster.addEventListener('dragend', () => { dragEmp = null; weeksEl.querySelectorAll('td.drop').forEach(t => t.classList.remove('drop')); });
+    roster.addEventListener('click', (e) => {
+      const it = e.target.closest('.roster-item');
+      if (!it) return;
+      highlightEmp = highlightEmp === it.dataset.emp ? null : it.dataset.emp;
+      renderMonth();
+    });
+  }
+
+  function subscribeMonth() {
+    if (!db) return;
+    if (unsubMonth) { unsubMonth(); unsubMonth = null; }
+    if (unsubNotes) { unsubNotes(); unsubNotes = null; }
+    const weeks = monthWeeks();
+    const keys = weeks.map(isoDate);
+    const myCursor = monthCursor;
+    monthShifts = {}; dayNotes = {};
+    unsubMonth = db.collection("shifts").where("weekStart", "in", keys).onSnapshot(snap => {
+      if (myCursor !== monthCursor) return;
+      const next = {};
+      snap.docs.forEach(d => { const sh = d.data(); if (sh && sh.empId != null && sh.weekStart) next[dateOfShift(sh) + '|' + sh.empId] = sh; });
+      monthShifts = next;
+      renderMonth();
+    }, err => {
+      console.error(err);
+      if (err && err.code === "permission-denied") { accessDenied(); return; }
+      toast("Couldn't load the month.");
+    });
+    const a = keys[0], b = isoDate(addDays(weeks[weeks.length - 1], 6));
+    unsubNotes = db.collection("dayNotes").where("date", ">=", a).where("date", "<=", b).onSnapshot(snap => {
+      if (myCursor !== monthCursor) return;
+      const next = {};
+      snap.docs.forEach(d => { const n = d.data(); if (n && n.date) next[n.date] = n.text || ""; });
+      dayNotes = next;
+      renderMonth();
+    }, err => { console.error(err); });
+  }
+
+  function empById(id) { return employees.find(e => e.id === id); }
+  function empOrder(id) { const i = employees.findIndex(e => e.id === id); return i < 0 ? 9999 : i; }
+  function guessType(empId) {
+    let best = null;
+    const all = Object.values(monthShifts).concat(Object.values(shiftsByKey));
+    all.forEach(sh => { if (sh.empId === empId && !sh.timeOff && sh.type) { if (!best || sh.weekStart > best.weekStart) best = sh; } });
+    if (best) return best.type;
+    const e = empById(empId);
+    return (e && e.type) || 'full';
+  }
+  function docIdFor(dateIso, empId) {
+    const [y, mo, d] = dateIso.split('-').map(Number);
+    const dt = new Date(y, mo - 1, d);
+    const mon = mondayOf(dt);
+    const dow = Math.round((dt - mon) / 86400000);
+    return { id: isoDate(mon) + "__" + empId + "__" + dow, weekStart: isoDate(mon), dow };
+  }
+
+  async function placeOnDay(empId, dateIso, row) {
+    if (!db) return;
+    const emp = empById(empId);
+    if (!emp) return;
+    const cur = monthShifts[dateIso + '|' + empId] || null;
+    const { id, weekStart, dow } = docIdFor(dateIso, empId);
+    let data;
+    if (row === 'off') {
+      if (cur && cur.timeOff) return;
+      data = { empId, weekStart, dow, timeOff: true };
+    } else {
+      if (cur && !cur.timeOff && cur.location === row) return;
+      data = (cur && !cur.timeOff)
+        ? Object.assign({}, cur, { location: row })
+        : { empId, weekStart, dow, start: "", end: "", location: row, type: guessType(empId), timeOff: false };
+    }
+    try {
+      await db.collection("shifts").doc(id).set(data);
+      const label = row === 'off' ? `${emp.name} unavailable` : `${emp.name} at ${storeLabel(row)}`;
+      pushUndo(label, [{ id, before: cur ? Object.assign({}, cur) : null }]);
+      if (cur && cur.timeOff && row !== 'off') toast(`${emp.name} was marked not available that day — moved to ${storeLabel(row)}.`);
+      else if (cur && !cur.timeOff && row === 'off') toast(`${emp.name} removed from ${storeLabel(cur.location)} and marked not available.`);
+      else if (cur && !cur.timeOff) toast(`${emp.name} moved from ${storeLabel(cur.location)} to ${storeLabel(row)}.`);
+    } catch (e) { console.error(e); toast("Couldn't save — check your connection."); }
+  }
+  async function removeFromDay(empId, dateIso) {
+    if (!db) return;
+    const cur = monthShifts[dateIso + '|' + empId];
+    if (!cur) return;
+    const { id } = docIdFor(dateIso, empId);
+    try {
+      await db.collection("shifts").doc(id).delete();
+      const emp = empById(empId);
+      pushUndo(`remove ${emp ? emp.name : 'name'}`, [{ id, before: Object.assign({}, cur) }]);
+    } catch (e) { console.error(e); toast("Couldn't remove — check your connection."); }
+  }
+
+  function prettyDay(dateIso) {
+    const [y, mo, d] = dateIso.split('-').map(Number);
+    const dt = new Date(y, mo - 1, d);
+    return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+  }
+
+  function openPicker(row, dateIso) {
+    if (!employees.length) { toast("Add your team on the Weekly Schedule first."); return; }
+    const root = document.getElementById('modalRoot');
+    const title = row === 'off' ? 'Not available' : storeLabel(row);
+    const draw = () => {
+      const items = employees.map(emp => {
+        const sh = monthShifts[dateIso + '|' + emp.id];
+        const on = row === 'off' ? !!(sh && sh.timeOff) : !!(sh && !sh.timeOff && sh.location === row);
+        let sub = '', warn = false;
+        if (!on && sh) {
+          if (sh.timeOff) { sub = 'Not available'; warn = true; }
+          else { sub = 'At ' + storeLabel(sh.location); warn = row === 'off'; }
+        } else if (on && sh && !sh.timeOff && sh.start) sub = to12h(sh.start) + '–' + to12h(sh.end);
+        return `<button type="button" class="pick-btn ${on ? 'on' : ''} ${row === 'off' ? 'offmode' : ''} ${warn ? 'warn' : ''}" data-emp="${emp.id}" data-on="${on ? 1 : 0}">
+          ${escapeHtml(emp.name)}${sub ? `<small>${escapeHtml(sub)}</small>` : ''}</button>`;
+      }).join('');
+      root.innerHTML = `
+        <div class="overlay" id="overlayBox">
+          <div class="modal picker">
+            <h2 style="${row === 'off' ? 'color:var(--danger)' : ''}">${escapeHtml(title)}</h2>
+            <div class="modal-sub">${prettyDay(dateIso)} · tap names to add or remove</div>
+            <div class="pick-list">${items}</div>
+            <div class="modal-actions"><span></span><button class="btn primary" id="pickDone">Done</button></div>
+          </div>
+        </div>`;
+      root.querySelector('#pickDone').addEventListener('click', closePicker);
+      root.querySelector('#overlayBox').addEventListener('click', (e) => { if (e.target.id === 'overlayBox') closePicker(); });
+      root.querySelectorAll('.pick-btn').forEach(b => b.addEventListener('click', async () => {
+        b.disabled = true;
+        if (b.dataset.on === '1') await removeFromDay(b.dataset.emp, dateIso);
+        else await placeOnDay(b.dataset.emp, dateIso, row);
+        draw();
+      }));
+    };
+    pickerRedraw = draw;
+    document.addEventListener('keydown', pickerEsc);
+    draw();
+  }
+  let pickerRedraw = null;
+  function pickerEsc(e) { if (e.key === 'Escape') closePicker(); }
+  function closePicker() {
+    pickerRedraw = null;
+    document.removeEventListener('keydown', pickerEsc);
+    document.getElementById('modalRoot').innerHTML = '';
+  }
+
+  function openNoteModal(dateIso) {
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `
+      <div class="overlay" id="overlayBox">
+        <div class="modal">
+          <h2>Notes</h2>
+          <div class="modal-sub">${prettyDay(dateIso)}</div>
+          <textarea class="note-in" id="noteIn" maxlength="500" placeholder="e.g. Geoff leaves at 5">${escapeHtml(dayNotes[dateIso] || '')}</textarea>
+          <div class="modal-actions">
+            <button class="btn ghost" id="noteClear">Clear</button>
+            <div style="display:flex;gap:8px;"><button class="btn" id="noteCancel">Cancel</button><button class="btn primary" id="noteSave">Save</button></div>
+          </div>
+        </div>
+      </div>`;
+    const close = () => { document.removeEventListener('keydown', esc); root.innerHTML = ''; };
+    const esc = (e) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', esc);
+    const save = async (text) => {
+      try {
+        if (text) await db.collection("dayNotes").doc(dateIso).set({ date: dateIso, text });
+        else await db.collection("dayNotes").doc(dateIso).delete();
+        toast(text ? "Note saved." : "Note cleared.");
+      } catch (e) { console.error(e); toast("Couldn't save the note."); }
+      close();
+    };
+    root.querySelector('#noteCancel').addEventListener('click', close);
+    root.querySelector('#overlayBox').addEventListener('click', (e) => { if (e.target.id === 'overlayBox') close(); });
+    root.querySelector('#noteSave').addEventListener('click', () => save(document.getElementById('noteIn').value.trim()));
+    root.querySelector('#noteClear').addEventListener('click', () => save(''));
+    setTimeout(() => { const t = document.getElementById('noteIn'); if (t) t.focus(); }, 0);
+  }
+
+  function renderMonth() {
+    if (pickerRedraw) pickerRedraw();
+    const label = document.getElementById('monthLabel');
+    if (!label) return;
+    label.textContent = monthCursor.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (view !== 'month') return;
+
+    // roster with day counts for this month
+    const mStart = isoDate(monthCursor);
+    const mEnd = isoDate(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 0));
+    const counts = {};
+    Object.entries(monthShifts).forEach(([k, sh]) => {
+      const d = k.split('|')[0];
+      if (d >= mStart && d <= mEnd && !sh.timeOff) counts[sh.empId] = (counts[sh.empId] || 0) + 1;
+    });
+    document.getElementById('rosterList').innerHTML = employees.length
+      ? employees.map(e => `<button type="button" class="roster-item ${highlightEmp === e.id ? 'on' : ''}" draggable="true" data-emp="${e.id}" title="Drag onto a day">
+          <span>${escapeHtml(e.name)}</span><span class="cnt">${counts[e.id] ? counts[e.id] + 'd' : ''}</span></button>`).join('')
+      : `<div class="add-hint" style="padding:8px">No one yet — add your team on the Weekly Schedule.</div>`;
+
+    // index shifts by date
+    const byDate = {};
+    Object.entries(monthShifts).forEach(([k, sh]) => {
+      const d = k.split('|')[0];
+      if (!empById(sh.empId)) return;
+      (byDate[d] = byDate[d] || []).push(sh);
+    });
+    Object.values(byDate).forEach(arr => arr.sort((a, b) => empOrder(a.empId) - empOrder(b.empId)));
+
+    const todayIso = isoDate(new Date());
+    const rows = STORES.map(st => ({ key: st, label: storeLabel(st), cls: '' }))
+      .concat([{ key: 'off', label: 'Not avail.', cls: 'r-off' }, { key: 'notes', label: 'Notes', cls: 'r-notes' }]);
+    const chip = (sh, dateIso) => {
+      const emp = empById(sh.empId);
+      const cls = sh.timeOff ? 'off' : (sh.type === 'part' ? '' : 'full');
+      const hl = highlightEmp ? (highlightEmp === sh.empId ? ' hl' : ' dim') : '';
+      const t = !sh.timeOff && sh.start ? `<span class="t">${to12h(sh.start)}–${to12h(sh.end)}</span>` : '';
+      return `<span class="chip ${cls}${hl}" title="${escapeHtml(emp.name)}${sh.start ? ' · ' + to12h(sh.start) + '–' + to12h(sh.end) : ''}">${escapeHtml(emp.name)}${t}<button type="button" class="x" data-emp="${sh.empId}" data-date="${dateIso}" aria-label="Remove ${escapeHtml(emp.name)}">✕</button></span>`;
+    };
+
+    const html = monthWeeks().map(mon => {
+      const days = [0,1,2,3,4,5,6].map(i => addDays(mon, i));
+      const head = `<tr><th></th>${days.map((d, i) => {
+        const iso = isoDate(d), out = d.getMonth() !== monthCursor.getMonth();
+        return `<th class="${out ? 'out' : ''} ${iso === todayIso ? 'today' : ''}">${DOW_NAMES[i]}<span class="md">${shortDate(d)}</span></th>`;
+      }).join('')}</tr>`;
+      const body = rows.map(r => `<tr class="${r.cls}"><td class="rl">${escapeHtml(r.label)}</td>${days.map(d => {
+        const iso = isoDate(d), out = d.getMonth() !== monthCursor.getMonth();
+        let inner = '';
+        if (r.key === 'notes') {
+          inner = dayNotes[iso] ? `<div class="note-text">${escapeHtml(dayNotes[iso])}</div>` : `<div class="add-hint">+ note</div>`;
+        } else {
+          const list = (byDate[iso] || []).filter(sh => r.key === 'off' ? sh.timeOff : (!sh.timeOff && sh.location === r.key));
+          inner = list.length ? `<div class="chips">${list.map(sh => chip(sh, iso)).join('')}</div>` : `<div class="add-hint">+</div>`;
+        }
+        return `<td class="mc ${out ? 'out' : ''}" data-row="${r.key}" data-date="${iso}">${inner}</td>`;
+      }).join('')}</tr>`).join('');
+      return `<div class="mweek"><table class="mgrid"><colgroup><col class="rowlab">${'<col>'.repeat(7)}</colgroup><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+    }).join('');
+    document.getElementById('monthWeeks').innerHTML = html;
   }
 
   function buildStoreTabs() {
     const wrap = document.getElementById('storeTabs');
     const tabs = [{ key: "all", label: "All employees" }].concat(
-      STORES.map(s => ({ key: s, label: s }))
+      STORES.map(s => ({ key: s, label: storeLabel(s) }))
     );
     wrap.innerHTML = tabs.map(t =>
       `<button data-key="${t.key}" class="${t.key===storeFilter?'active':''}">${escapeHtml(t.label)}</button>`
@@ -917,7 +1354,7 @@
       msg = `Copying <strong>Time off (all day)</strong> — click any square to paste it there`;
     } else {
       const typeLabel = copiedShift.type === 'part' ? 'Part time' : 'Full time';
-      msg = `Copying <strong>${to12h(copiedShift.start)}–${to12h(copiedShift.end)} · ${escapeHtml(copiedShift.location)} (${typeLabel})</strong> — click any square to paste it there`;
+      msg = `Copying <strong>${to12h(copiedShift.start)}–${to12h(copiedShift.end)} · ${escapeHtml(storeLabel(copiedShift.location))} (${typeLabel})</strong> — click any square to paste it there`;
     }
     document.getElementById('copyBannerText').innerHTML = msg;
     banner.classList.add('show');
@@ -1031,11 +1468,14 @@
     refreshUndoBtn();
   }
   function refreshUndoBtn() {
-    const btn = document.getElementById('undoBtn');
-    btn.disabled = undoStack.length === 0 || undoing;
-    btn.title = undoStack.length
-      ? `Undo: ${undoStack[undoStack.length - 1].label} (Ctrl+Z)`
-      : "Nothing to undo";
+    ['undoBtn', 'undoBtnM'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = undoStack.length === 0 || undoing;
+      btn.title = undoStack.length
+        ? `Undo: ${undoStack[undoStack.length - 1].label} (Ctrl+Z)`
+        : "Nothing to undo";
+    });
   }
   async function undoLast() {
     if (undoing || !undoStack.length || !db) return;
@@ -1206,6 +1646,7 @@
       (snap) => {
         employees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         render();
+        renderMonth();
       },
       (err) => {
         console.error(err);
@@ -1293,7 +1734,7 @@
     const existing = shiftsByKey[keyFor(emp.id, dow)] || null;
     const root = document.getElementById('modalRoot');
     const locOptions = STORES.map(s =>
-      `<option value="${s}" ${existing && existing.location===s?'selected':''}>${s}</option>`
+      `<option value="${s}" ${existing && existing.location===s?'selected':''}>${storeLabel(s)}</option>`
     ).join('');
     root.innerHTML = `
       <div class="overlay" id="overlayBox">
@@ -1476,7 +1917,7 @@
 
     if (storeFilter !== "all" && visibleEmployees.length === 0) {
       body.innerHTML = `<tr><td colspan="8"><div class="empty-state">
-        <div class="big">Nobody's scheduled at ${escapeHtml(storeFilter)} this week</div>
+        <div class="big">Nobody's scheduled at ${escapeHtml(storeLabel(storeFilter))} this week</div>
         Switch to "All employees" to add shifts.
       </div></td></tr>`;
       return;
@@ -1523,8 +1964,8 @@
           const cls = s.type === 'part' ? 'part' : 'full';
           rows += `<td class="cell">
             <button class="shift-box ${cls} ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">
-              <span class="shift-time">${to12h(s.start)}–${to12h(s.end)}</span>
-              <span class="shift-loc">${storeFilter === 'all' ? escapeHtml(s.location) : (s.type === 'part' ? 'Part time' : 'Full time')}</span>
+              <span class="shift-time">${s.start ? to12h(s.start) + '–' + to12h(s.end) : 'Time TBD'}</span>
+              <span class="shift-loc">${storeFilter === 'all' ? escapeHtml(storeLabel(s.location)) : (s.type === 'part' ? 'Part time' : 'Full time')}</span>
               <span class="copy-icon" data-emp="${emp.id}" data-dow="${dow}" title="Copy this shift">⧉</span>
             </button>
           </td>`;
