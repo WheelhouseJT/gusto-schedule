@@ -626,6 +626,11 @@
   .roster-item:hover { background: var(--paper); border-color: var(--line); }
   .roster-item.on { background: var(--gold-soft); border-color: var(--gold); }
   .roster-item .cnt { font-size: 11px; font-weight: 500; color: var(--ink-soft); }
+  .roster-add { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--line); }
+  .roster-add input { flex: 1; min-width: 0; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); }
+  .roster-add input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .roster-add button { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 14px; padding: 6px 10px; border-radius: 7px; border: 1px solid var(--blue); background: var(--blue); color: #fff; cursor: pointer; }
+  .roster-add button:hover { background: var(--blue-dk); border-color: var(--blue-dk); }
   .month-weeks { display: grid; gap: 14px; min-width: 0; }
   .mweek { overflow-x: auto; border: 1px solid var(--line); border-top: 3px solid var(--blue); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow); }
   table.mgrid { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; table-layout: fixed; }
@@ -734,6 +739,10 @@
       <aside class="roster">
         <h3>Team</h3>
         <div class="roster-hint">Drag a name onto a day. Click a name to highlight everywhere they're scheduled.</div>
+        <div class="roster-add">
+          <input type="text" id="newEmpNameM" placeholder="Add name" maxlength="60" aria-label="Add employee name">
+          <button type="button" id="addEmpBtnM">Add</button>
+        </div>
         <div class="roster-list" id="rosterList"></div>
       </aside>
       <div>
@@ -997,6 +1006,8 @@
     document.getElementById('nextMonth').addEventListener('click', () => { monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1); subscribeMonth(); renderMonth(); });
     document.getElementById('thisMonthBtn').addEventListener('click', () => { const d = new Date(); monthCursor = new Date(d.getFullYear(), d.getMonth(), 1); subscribeMonth(); renderMonth(); });
     document.getElementById('undoBtnM').addEventListener('click', undoLast);
+    document.getElementById('addEmpBtnM').addEventListener('click', () => addEmployee('newEmpNameM'));
+    document.getElementById('newEmpNameM').addEventListener('keydown', (e) => { if (e.key === 'Enter') addEmployee('newEmpNameM'); });
 
     const weeksEl = document.getElementById('monthWeeks');
     weeksEl.addEventListener('click', (e) => {
@@ -1135,7 +1146,7 @@
   }
 
   function openPicker(row, dateIso) {
-    if (!employees.length) { toast("Add your team on the Weekly Schedule first."); return; }
+    if (!employees.length) { toast("Add your team in the Team list first."); return; }
     const root = document.getElementById('modalRoot');
     const title = row === 'off' ? 'Not available' : storeLabel(row);
     const draw = () => {
@@ -1230,7 +1241,7 @@
     document.getElementById('rosterList').innerHTML = employees.length
       ? employees.map(e => `<button type="button" class="roster-item ${highlightEmp === e.id ? 'on' : ''}" draggable="true" data-emp="${e.id}" title="Drag onto a day">
           <span>${escapeHtml(e.name)}</span><span class="cnt">${counts[e.id] ? counts[e.id] + 'd' : ''}</span></button>`).join('')
-      : `<div class="add-hint" style="padding:8px">No one yet — add your team on the Weekly Schedule.</div>`;
+      : `<div class="add-hint" style="padding:8px">No one yet — add your team below.</div>`;
 
     // index shifts by date
     const byDate = {};
@@ -1678,8 +1689,8 @@
     );
   }
 
-  async function addEmployee() {
-    const input = document.getElementById('newEmpName');
+  async function addEmployee(inputId) {
+    const input = document.getElementById(typeof inputId === 'string' ? inputId : 'newEmpName');
     const name = input.value.trim();
     if (!name) return;
     if (!db) { toast("Storage unavailable — can't add employees right now."); return; }
