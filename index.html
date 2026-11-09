@@ -1261,7 +1261,7 @@
       const emp = empById(sh.empId);
       const cls = sh.timeOff ? 'off' : (sh.type === 'part' ? '' : 'full');
       const hl = highlightEmp ? (highlightEmp === sh.empId ? ' hl' : ' dim') : '';
-      const t = !sh.timeOff && sh.start ? `<span class="t">${to12h(sh.start)}–${to12h(sh.end)}</span>` : '';
+      const t = '';
       return `<span class="chip ${cls}${hl}" title="${escapeHtml(emp.name)}${sh.start ? ' · ' + to12h(sh.start) + '–' + to12h(sh.end) : ''}"><span class="nm">${escapeHtml(emp.name)}</span>${t}<button type="button" class="x" data-emp="${sh.empId}" data-date="${dateIso}" aria-label="Remove ${escapeHtml(emp.name)}">✕</button></span>`;
     };
 
