@@ -683,6 +683,16 @@
   .month-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; align-items: center; }
   .month-legend .chip { pointer-events: none; }
 
+  /* closures */
+  table.mgrid td.mc.closed { cursor: pointer; background: repeating-linear-gradient(135deg, #e9ebef, #e9ebef 7px, #f4f5f7 7px, #f4f5f7 14px) !important; }
+  .closed-tag { display: inline-block; font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; font-weight: 700; color: #4a5059; background: #fff; border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 7px; margin: 3px 1px; }
+  td.mc.closed .chips { margin-top: 3px; }
+  td.mc.closed .chip { opacity: .55; }
+  .picker-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+  .picker-tools .btn { font-size: 12.5px; padding: 6px 10px; }
+  thead th .closed-note { display: block; margin-top: 4px; font-family: var(--body); letter-spacing: 0; text-transform: none; font-size: 11px; font-weight: 700; color: #000; background: #c9ccd2; border-radius: 4px; padding: 1px 6px; width: fit-content; }
+  td.cell.closed-col { background: repeating-linear-gradient(135deg, #eef0f3, #eef0f3 7px, #f7f8fa 7px, #f7f8fa 14px); }
+
   /* picker */
   .modal.picker { max-width: 420px; }
   .pick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; max-height: 50vh; overflow-y: auto; margin: 4px 0 6px; }
@@ -858,7 +868,8 @@
   let monthCursor = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
   let monthShifts = {};  // "YYYY-MM-DD|empId" -> shift doc data
   let dayNotes = {};     // "YYYY-MM-DD" -> text
-  let unsubMonth = null, unsubNotes = null;
+  let unsubMonth = null, unsubNotes = null, unsubMonthClosed = null, unsubWeekClosed = null;
+  let monthClosed = {}, weekClosed = {}; // "YYYY-MM-DD|Store" -> true
   let highlightEmp = null;
   let dragEmp = null;
 
@@ -935,7 +946,9 @@
     if (unsubShifts) { unsubShifts(); unsubShifts = null; }
     if (unsubMonth) { unsubMonth(); unsubMonth = null; }
     if (unsubNotes) { unsubNotes(); unsubNotes = null; }
-    monthShifts = {}; dayNotes = {};
+    if (unsubMonthClosed) { unsubMonthClosed(); unsubMonthClosed = null; }
+    if (unsubWeekClosed) { unsubWeekClosed(); unsubWeekClosed = null; }
+    monthShifts = {}; dayNotes = {}; monthClosed = {}; weekClosed = {};
     employees = []; shiftsByKey = {}; undoStack = []; refreshUndoBtn();
   }
   function accessDenied() {
@@ -1038,6 +1051,7 @@
       const td = e.target.closest('td.mc');
       if (!td) return;
       if (td.dataset.row === 'notes') openNoteModal(td.dataset.date);
+      else if (td.classList.contains('closed')) openClosedModal(td.dataset.date, td.dataset.row);
       else openPicker(td.dataset.row, td.dataset.date);
     });
     weeksEl.addEventListener('dragover', (e) => {
@@ -1057,6 +1071,7 @@
       if (!td || !dragEmp || td.dataset.row === 'notes') return;
       e.preventDefault();
       const empId = dragEmp; dragEmp = null;
+      if (td.classList.contains('closed')) { toast(`${storeLabel(td.dataset.row)} is closed that day.`); return; }
       placeOnDay(empId, td.dataset.date, td.dataset.row);
     });
 
@@ -1104,6 +1119,118 @@
       dayNotes = next;
       renderMonth();
     }, err => { console.error(err); });
+    if (unsubMonthClosed) { unsubMonthClosed(); unsubMonthClosed = null; }
+    monthClosed = {};
+    unsubMonthClosed = db.collection("closures").where("date", ">=", a).where("date", "<=", b).onSnapshot(snap => {
+      if (myCursor !== monthCursor) return;
+      const next = {};
+      snap.docs.forEach(d => { const c = d.data(); if (c && c.date && c.store) next[c.date + '|' + c.store] = true; });
+      monthClosed = next;
+      renderMonth(); render();
+    }, err => { console.error(err); });
+  }
+  function isClosed(dateIso, store) { return !!(monthClosed[dateIso + '|' + store] || weekClosed[dateIso + '|' + store]); }
+  function closedStores(dateIso) { return STORES.filter(st => isClosed(dateIso, st)); }
+  function subscribeWeekClosures() {
+    if (!db) return;
+    if (unsubWeekClosed) { unsubWeekClosed(); unsubWeekClosed = null; }
+    weekClosed = {};
+    const a = isoDate(currentWeekStart), b = isoDate(addDays(currentWeekStart, 6));
+    const myWeek = a;
+    unsubWeekClosed = db.collection("closures").where("date", ">=", a).where("date", "<=", b).onSnapshot(snap => {
+      if (myWeek !== isoDate(currentWeekStart)) return;
+      const next = {};
+      snap.docs.forEach(d => { const c = d.data(); if (c && c.date && c.store) next[c.date + '|' + c.store] = true; });
+      weekClosed = next;
+      render(); renderMonth();
+    }, err => { console.error(err); });
+  }
+
+  // Close one store (or all) on a day. Asks what to do with anyone already scheduled there.
+  function askCloseStores(dateIso, stores) {
+    const affected = Object.values(monthShifts).filter(sh => !sh.timeOff && dateOfShift(sh) === dateIso && stores.includes(sh.location) && empById(sh.empId));
+    const what = stores.length === STORES.length ? 'all stores' : storeLabel(stores[0]);
+    if (!affected.length) { doCloseStores(dateIso, stores, false); return; }
+    const names = affected.map(sh => empById(sh.empId).name);
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `
+      <div class="confirm-box" id="confirmBox">
+        <div class="confirm-card" style="max-width:380px;">
+          <p>Closing <strong>${escapeHtml(what)}</strong> on ${prettyDay(dateIso)}. <strong>${affected.length}</strong> ${affected.length === 1 ? 'person is' : 'people are'} scheduled there: ${escapeHtml(names.join(', '))}.</p>
+          <div class="confirm-actions" style="flex-wrap:wrap;">
+            <button class="btn ghost" id="ccCancel">Cancel</button>
+            <button class="btn" id="ccKeep">Close, keep their shifts</button>
+            <button class="btn primary" id="ccRemove">Close &amp; remove shifts</button>
+          </div>
+        </div>
+      </div>`;
+    const close = () => { root.innerHTML = ''; };
+    root.querySelector('#ccCancel').addEventListener('click', close);
+    root.querySelector('#ccKeep').addEventListener('click', () => { close(); doCloseStores(dateIso, stores, false); });
+    root.querySelector('#ccRemove').addEventListener('click', () => { close(); doCloseStores(dateIso, stores, true); });
+    root.querySelector('#confirmBox').addEventListener('click', (e) => { if (e.target.id === 'confirmBox') close(); });
+  }
+  async function doCloseStores(dateIso, stores, removeShifts) {
+    if (!db) return;
+    const batch = db.batch(), changes = [];
+    stores.forEach(st => {
+      if (isClosed(dateIso, st)) return;
+      const id = dateIso + '__' + st;
+      batch.set(db.collection("closures").doc(id), { date: dateIso, store: st });
+      changes.push({ col: "closures", id, before: null });
+    });
+    if (removeShifts) {
+      Object.values(monthShifts).forEach(sh => {
+        if (sh.timeOff || dateOfShift(sh) !== dateIso || !stores.includes(sh.location)) return;
+        const { id } = docIdFor(dateIso, sh.empId);
+        batch.delete(db.collection("shifts").doc(id));
+        changes.push({ id, before: Object.assign({}, sh) });
+      });
+    }
+    if (!changes.length) return;
+    try {
+      await batch.commit();
+      const what = stores.length === STORES.length ? 'All stores' : storeLabel(stores[0]);
+      pushUndo(`close ${what}`, changes);
+      toast(`${what} closed ${prettyDay(dateIso)}.`);
+    } catch (e) { console.error(e); toast("Couldn't save — check your connection."); }
+  }
+  async function reopenStores(dateIso, stores) {
+    if (!db) return;
+    const batch = db.batch(), changes = [];
+    stores.forEach(st => {
+      if (!isClosed(dateIso, st)) return;
+      const id = dateIso + '__' + st;
+      batch.delete(db.collection("closures").doc(id));
+      changes.push({ col: "closures", id, before: { date: dateIso, store: st } });
+    });
+    if (!changes.length) return;
+    try {
+      await batch.commit();
+      pushUndo(`reopen ${stores.length > 1 ? 'stores' : storeLabel(stores[0])}`, changes);
+      toast(`${stores.length > 1 ? 'Stores' : storeLabel(stores[0])} reopened.`);
+    } catch (e) { console.error(e); toast("Couldn't save — check your connection."); }
+  }
+  function openClosedModal(dateIso, store) {
+    const all = closedStores(dateIso);
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `
+      <div class="confirm-box" id="confirmBox">
+        <div class="confirm-card" style="max-width:360px;">
+          <p><strong>${escapeHtml(storeLabel(store))}</strong> is marked closed on ${prettyDay(dateIso)}.</p>
+          <div class="confirm-actions" style="flex-wrap:wrap;">
+            <button class="btn ghost" id="coCancel">Cancel</button>
+            ${all.length > 1 ? `<button class="btn" id="coAll">Reopen all ${all.length}</button>` : ''}
+            <button class="btn primary" id="coOne">Reopen ${escapeHtml(storeLabel(store))}</button>
+          </div>
+        </div>
+      </div>`;
+    const close = () => { root.innerHTML = ''; };
+    root.querySelector('#coCancel').addEventListener('click', close);
+    root.querySelector('#coOne').addEventListener('click', () => { close(); reopenStores(dateIso, [store]); });
+    const allBtn = root.querySelector('#coAll');
+    if (allBtn) allBtn.addEventListener('click', () => { close(); reopenStores(dateIso, all); });
+    root.querySelector('#confirmBox').addEventListener('click', (e) => { if (e.target.id === 'confirmBox') close(); });
   }
 
   function empById(id) { return employees.find(e => e.id === id); }
@@ -1189,10 +1316,16 @@
             <h2 style="${row === 'off' ? 'color:var(--danger)' : ''}">${escapeHtml(title)}</h2>
             <div class="modal-sub">${prettyDay(dateIso)} · tap names to add or remove</div>
             <div class="pick-list">${items}</div>
-            <div class="modal-actions"><span></span><button class="btn primary" id="pickDone">Done</button></div>
+            <div class="modal-actions">${row === 'off' ? '<span></span>' : `<div class="picker-tools">
+              <button type="button" class="btn" id="pickClose" title="Block off this store for the day">Mark ${escapeHtml(title)} closed</button>
+              <button type="button" class="btn" id="pickCloseAll" title="Holiday: block off every store">Close all stores</button></div>`}
+              <button class="btn primary" id="pickDone">Done</button></div>
           </div>
         </div>`;
       root.querySelector('#pickDone').addEventListener('click', closePicker);
+      const pc = root.querySelector('#pickClose'), pca = root.querySelector('#pickCloseAll');
+      if (pc) pc.addEventListener('click', () => { closePicker(); askCloseStores(dateIso, [row]); });
+      if (pca) pca.addEventListener('click', () => { closePicker(); askCloseStores(dateIso, STORES.slice()); });
       root.querySelector('#overlayBox').addEventListener('click', (e) => { if (e.target.id === 'overlayBox') closePicker(); });
       root.querySelectorAll('.pick-btn').forEach(b => b.addEventListener('click', async () => {
         b.disabled = true;
@@ -1298,7 +1431,11 @@
           inner = dayNotes[iso] ? `<div class="note-text">${escapeHtml(dayNotes[iso])}</div>` : `<div class="add-hint">+ note</div>`;
         } else {
           const list = (byDate[iso] || []).filter(sh => r.key === 'off' ? sh.timeOff : (!sh.timeOff && sh.location === r.key));
-          inner = list.length ? `<div class="chips">${list.map(sh => chip(sh, iso)).join('')}</div>` : `<div class="add-hint">+</div>`;
+          const shut = r.key !== 'off' && isClosed(iso, r.key);
+          inner = shut
+            ? `<span class="closed-tag">Closed</span>${list.length ? `<div class="chips">${list.map(sh => chip(sh, iso)).join('')}</div>` : ''}`
+            : (list.length ? `<div class="chips">${list.map(sh => chip(sh, iso)).join('')}</div>` : `<div class="add-hint">+</div>`);
+          if (shut) return `<td class="mc closed ${out ? 'out' : ''}" data-row="${r.key}" data-date="${iso}" title="${escapeHtml(r.label)} closed — click to reopen">${inner}</td>`;
         }
         return `<td class="mc ${out ? 'out' : ''}" data-row="${r.key}" data-date="${iso}">${inner}</td>`;
       }).join('')}</tr>`).join('');
@@ -1518,7 +1655,7 @@
     try {
       const batch = db.batch();
       entry.changes.forEach(c => {
-        const ref = db.collection("shifts").doc(c.id);
+        const ref = db.collection(c.col || "shifts").doc(c.id);
         if (c.before) batch.set(ref, c.before); else batch.delete(ref);
       });
       await batch.commit();
@@ -1712,6 +1849,7 @@
     if (!db) { shiftsByKey = {}; render(); return; }
     if (unsubShifts) unsubShifts();
     const wk = isoDate(currentWeekStart);
+    subscribeWeekClosures();
     unsubShifts = db.collection("shifts").where("weekStart", "==", wk).onSnapshot(
       (snap) => {
         const next = {};
@@ -1786,7 +1924,7 @@
     const existing = shiftsByKey[keyFor(emp.id, dow)] || null;
     const root = document.getElementById('modalRoot');
     const locOptions = STORES.map(s =>
-      `<option value="${s}" ${existing && existing.location===s?'selected':''}>${storeLabel(s)}</option>`
+      `<option value="${s}" ${existing && existing.location===s?'selected':''}>${storeLabel(s)}${isClosed(isoDate(dateObj), s) ? ' (closed)' : ''}</option>`
     ).join('');
     root.innerHTML = `
       <div class="overlay" id="overlayBox">
@@ -1940,7 +2078,9 @@
     let html = `<th class="name-col-head">Employee</th>`;
     for (let i = 0; i < 7; i++) {
       const d = addDays(currentWeekStart, i);
-      html += `<th><span class="dow">${DOW_NAMES[i]}</span><span class="ddate">${shortDate(d)}</span></th>`;
+      const cs = closedStores(isoDate(d));
+      const note = cs.length === STORES.length ? 'All stores closed' : (cs.length ? 'Closed: ' + cs.map(storeLabel).join(', ') : '');
+      html += `<th><span class="dow">${DOW_NAMES[i]}</span><span class="ddate">${shortDate(d)}</span>${note ? `<span class="closed-note">${escapeHtml(note)}</span>` : ''}</th>`;
     }
     head.innerHTML = html;
   }
@@ -1977,6 +2117,7 @@
 
     const canReorder = storeFilter === "all";
     let rows = '';
+    let allClosedDow = null;
     visibleEmployees.forEach((emp, i) => {
       const fullIdx = employees.findIndex(e => e.id === emp.id);
       const atTop = fullIdx <= 0;
@@ -1998,6 +2139,7 @@
       for (let dow = 0; dow < 7; dow++) {
         const s = shiftsByKey[keyFor(emp.id, dow)];
         const showBlank = storeFilter !== "all" && (!s || (!s.timeOff && s.location !== storeFilter));
+        if (!allClosedDow) allClosedDow = [0,1,2,3,4,5,6].map(i => { const cs = closedStores(isoDate(addDays(currentWeekStart, i))); return storeFilter === 'all' ? cs.length === STORES.length : cs.includes(storeFilter); });
         let pasteCls = copiedShift ? 'paste-target' : '';
         if (selectMode) {
           pasteCls += (s && !showBlank)
@@ -2005,7 +2147,7 @@
             : ' select-dim';
         }
         if (s && s.timeOff) {
-          rows += `<td class="cell">
+          rows += `<td class="cell${allClosedDow[dow] ? ' closed-col' : ''}">
             <button class="shift-box timeoff ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">
               <span class="timeoff-label">Time off</span>
               <span class="timeoff-sub">All day</span>
@@ -2014,7 +2156,7 @@
           </td>`;
         } else if (s && !showBlank) {
           const cls = s.type === 'part' ? 'part' : 'full';
-          rows += `<td class="cell">
+          rows += `<td class="cell${allClosedDow[dow] ? ' closed-col' : ''}">
             <button class="shift-box ${cls} ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">
               <span class="shift-time">${s.start ? to12h(s.start) + '–' + to12h(s.end) : 'Time TBD'}</span>
               <span class="shift-loc">${storeFilter === 'all' ? escapeHtml(storeLabel(s.location)) : (s.type === 'part' ? 'Part time' : 'Full time')}</span>
@@ -2022,7 +2164,7 @@
             </button>
           </td>`;
         } else {
-          rows += `<td class="cell">
+          rows += `<td class="cell${allClosedDow[dow] ? ' closed-col' : ''}">
             <button class="shift-box ${pasteCls}" data-emp="${emp.id}" data-dow="${dow}">+ Add</button>
           </td>`;
         }
