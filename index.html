@@ -611,6 +611,22 @@
   .view-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
   #app.view-month .week-only { display: none !important; }
   #app.view-week .month-only { display: none !important; }
+  /* Side by side: weekly on top, monthly below, each in its own scroll panel */
+  #app.view-both { display: flex; flex-direction: column; }
+  #app.view-both > header.top { order: 0; }
+  #app.view-both > .view-row.week-only { order: 1; }
+  #app.view-both > #weekMain { order: 2; }
+  #app.view-both > #monthView { order: 3; margin-top: 22px; padding-top: 18px; border-top: 2px dashed var(--line-strong); }
+  #app.view-both .grid-scroll { max-height: max(250px, calc(50vh - 70px)); overflow: auto; }
+  #app.view-both .month-layout { max-height: max(280px, calc(50vh - 30px)); overflow: auto; padding-right: 4px; }
+  #app.view-both > #monthView { margin-top: 14px !important; padding-top: 12px !important; }
+  #app.view-both .legend { margin-top: 8px; }
+  #app.view-both .roster { top: 0; max-height: none; }
+  .pane-title { display: none; font-family: var(--display); text-transform: uppercase; letter-spacing: .08em; font-size: 18px; margin: 0 0 8px; }
+  #app.view-both .pane-title { display: block; }
+  .mweek.current { box-shadow: 0 0 0 3px var(--gold), var(--shadow); }
+  .mweek .editing-tag { display: none; }
+  #app.view-both .mweek.current .editing-tag { display: inline-block; font-family: var(--body); letter-spacing: 0; font-size: 11px; font-weight: 700; color: #000; background: var(--gold); border-radius: 4px; padding: 2px 6px; text-transform: none; }
 
   /* ===== Monthly planner ===== */
   .month-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 8px; box-shadow: var(--shadow); }
@@ -685,7 +701,7 @@
     .roster-item { width: auto; border-color: var(--line); }
     .month-label { min-width: 0; flex: 1; font-size: 17px; }
     .view-tabs { width: 100%; }
-    .view-tabs button { flex: 1; font-size: 13px; padding: 7px 8px; }
+    .view-tabs button { flex: 1; font-size: 12px; padding: 7px 6px; }
   }
 </style>
 </head>
@@ -711,11 +727,12 @@
     <div class="view-tabs" role="tablist">
       <button data-view="month" role="tab">Monthly Planner</button>
       <button data-view="week" role="tab">Weekly Schedule</button>
+      <button data-view="both" role="tab" title="Weekly and monthly on one page">Side by Side</button>
     </div>
   </header>
 
   <div class="view-row week-only">
-    <div></div>
+    <h2 class="pane-title" style="margin:0">Weekly Schedule</h2><div></div>
     <div class="week-nav">
       <button class="arrow" id="prevWeek" aria-label="Previous week">‹</button>
       <div class="week-label" id="weekLabel">—</div>
@@ -728,6 +745,7 @@
   </div>
 
   <div class="month-only" id="monthView">
+    <h2 class="pane-title">Monthly Planner</h2>
     <div class="view-row">
       <div class="month-bar">
         <button class="arrow" id="prevMonth" aria-label="Previous month">‹</button>
@@ -759,7 +777,7 @@
     </div>
   </div>
 
-  <div class="week-only">
+  <div class="week-only" id="weekMain">
   <div class="controls">
     <div class="store-tabs" id="storeTabs"></div>
     <div class="add-emp">
@@ -836,7 +854,7 @@
   const STORE_LABEL = { Flagship: "Wayne" };
   const storeLabel = st => STORE_LABEL[st] || st;
   let view = "week";
-  try { if (localStorage.getItem("ws_view") === "month") view = "month"; } catch (e) {}
+  try { const sv = localStorage.getItem("ws_view"); if (sv === "month" || sv === "both") view = sv; } catch (e) {}
   let monthCursor = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
   let monthShifts = {};  // "YYYY-MM-DD|empId" -> shift doc data
   let dayNotes = {};     // "YYYY-MM-DD" -> text
@@ -988,8 +1006,10 @@
     const app = document.getElementById('app');
     app.classList.toggle('view-month', v === 'month');
     app.classList.toggle('view-week', v === 'week');
+    app.classList.toggle('view-both', v === 'both');
     document.querySelectorAll('.view-tabs button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
     if (v === 'month') { if (copiedShift) exitCopyMode(); if (selectMode) exitSelectMode(); renderMonth(); }
+    if (v === 'both') { followWeek(true); renderMonth(); scrollToCurrentWeek(); }
   }
   function monthWeeks() {
     const first = monthCursor;
@@ -1230,7 +1250,7 @@
     const label = document.getElementById('monthLabel');
     if (!label) return;
     label.textContent = monthCursor.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    if (view !== 'month') return;
+    if (view !== 'month' && view !== 'both') return;
 
     // roster with day counts for this month
     const mStart = isoDate(monthCursor);
@@ -1267,7 +1287,7 @@
 
     const html = monthWeeks().map(mon => {
       const days = [0,1,2,3,4,5,6].map(i => addDays(mon, i));
-      const head = `<tr><th></th>${days.map((d, i) => {
+      const head = `<tr><th>${isoDate(mon) === isoDate(currentWeekStart) ? '<span class="editing-tag">Editing</span>' : ''}</th>${days.map((d, i) => {
         const iso = isoDate(d), out = d.getMonth() !== monthCursor.getMonth();
         return `<th class="${out ? 'out' : ''} ${iso === todayIso ? 'today' : ''}">${DOW_NAMES[i]}<span class="md">${shortDate(d)}</span></th>`;
       }).join('')}</tr>`;
@@ -1282,7 +1302,8 @@
         }
         return `<td class="mc ${out ? 'out' : ''}" data-row="${r.key}" data-date="${iso}">${inner}</td>`;
       }).join('')}</tr>`).join('');
-      return `<div class="mweek"><table class="mgrid"><colgroup><col class="rowlab">${'<col>'.repeat(7)}</colgroup><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+      const isCur = isoDate(mon) === isoDate(currentWeekStart);
+      return `<div class="mweek${isCur ? ' current' : ''}"><table class="mgrid"><colgroup><col class="rowlab">${'<col>'.repeat(7)}</colgroup><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
     }).join('');
     document.getElementById('monthWeeks').innerHTML = html;
   }
@@ -1646,6 +1667,24 @@
     renderWeekBanner();
     subscribeShiftsForWeek();
     render();
+    if (view === 'both') { followWeek(); renderMonth(); scrollToCurrentWeek(); }
+  }
+  // Side by side: keep the month on the weekly page's week (month of that week's Thursday)
+  function followWeek(force) {
+    const thu = addDays(currentWeekStart, 3);
+    const m = new Date(thu.getFullYear(), thu.getMonth(), 1);
+    if (force || m.getTime() !== monthCursor.getTime()) {
+      if (m.getTime() !== monthCursor.getTime()) { monthCursor = m; subscribeMonth(); }
+    }
+  }
+  function scrollToCurrentWeek() {
+    requestAnimationFrame(() => {
+      const box = document.querySelector('#app.view-both .month-layout');
+      const cur = document.querySelector('.mweek.current');
+      if (!box || !cur) return;
+      const top = cur.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
+      box.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    });
   }
 
   function renderWeekLabel() {
