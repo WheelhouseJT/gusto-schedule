@@ -659,19 +659,19 @@
   table.mgrid thead th.out .md { background: #444; color: #bbb; }
   table.mgrid thead th.today .md { background: var(--blue); }
   table.mgrid td.rl { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: 14px; font-weight: 700; padding: 6px 8px; background: var(--paper); vertical-align: middle; }
-  table.mgrid tr.r-off td.rl { color: var(--timeoff-text); border-left: 5px solid var(--timeoff-border); }
+  table.mgrid tr.r-off td.rl { color: var(--danger); border-left: 5px solid var(--danger); }
   table.mgrid tr.r-notes td.rl { color: var(--ink-soft); }
   table.mgrid td.mc { padding: 4px; vertical-align: top; cursor: pointer; height: 44px; overflow: hidden; }
   table.mgrid td.mc:hover { background: #fafbfc; }
   table.mgrid td.mc.out { background: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(0,0,0,0.018) 6px, rgba(0,0,0,0.018) 12px); }
   table.mgrid td.mc.drop { background: var(--gold-soft); box-shadow: inset 0 0 0 2px var(--gold); }
-  table.mgrid tr.r-off td.mc { background: rgba(60, 67, 75, 0.035); }
+  table.mgrid tr.r-off td.mc { background: rgba(179, 38, 30, 0.03); }
   .chips { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .chip { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 4px; row-gap: 1px; font-size: 12px; font-weight: 600; line-height: 1.15; padding: 4px 4px 4px 6px; border-radius: 5px; background: var(--part-bg); color: var(--part-text); border: 1px solid var(--part-border); min-width: 0; max-width: 100%; }
   .chip .nm { min-width: 0; overflow-wrap: anywhere; }
   .month-legend .chip { display: inline-flex; }
   .chip.full { background: var(--full); color: var(--full-text); border-color: var(--full); }
-  .chip.off { background: var(--timeoff-bg); color: var(--timeoff-text); border-color: var(--timeoff-border); }
+  .chip.off { background: var(--danger-soft); color: var(--danger); border-color: rgba(179,38,30,.35); }
   .chip.hl { box-shadow: 0 0 0 2px var(--gold); }
   .chip.dim { opacity: .35; }
   .chip .t { grid-column: 1; grid-row: 2; font-weight: 500; opacity: .85; font-size: 11px; overflow-wrap: anywhere; }
@@ -727,7 +727,7 @@
   .pick-btn small { font-weight: 500; font-size: 11px; color: var(--ink-soft); }
   .pick-btn.on { background: var(--full); border-color: var(--full); color: #fff; }
   .pick-btn.on small { color: rgba(255,255,255,.8); }
-  .pick-btn.on.offmode { background: #5b616b; border-color: #5b616b; }
+  .pick-btn.on.offmode { background: var(--danger); border-color: var(--danger); }
   .pick-btn.warn small { color: var(--danger); }
   .modal textarea.note-in { width: 100%; min-height: 90px; font: inherit; padding: 8px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); resize: vertical; }
 
