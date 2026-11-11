@@ -683,14 +683,14 @@
   .month-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; align-items: center; }
   .month-legend .chip { pointer-events: none; }
 
-  /* store colors: Wayne purple, West blue, Ardmore green, Philly orange. Solid = full time, light = part time */
-  .st-Flagship { --sc: #8E6BBF; --sc-tint: rgba(142,107,191,.16); --sc-bd: rgba(142,107,191,.5); --sc-tx: #5E4590; }
+  /* store colors: Wayne light orange, West blue, Ardmore green, Philly teal. Solid = full time, light = part time */
+  .st-Flagship { --sc: #F5A962; --sc-on: #3D2206; --sc-tint: rgba(245,169,98,.22); --sc-bd: rgba(230,140,60,.6); --sc-tx: #8A4A0C; }
   .st-West     { --sc: #3566B8; --sc-tint: rgba(53,102,184,.15); --sc-bd: rgba(53,102,184,.5); --sc-tx: #24488A; }
   .st-Ardmore  { --sc: #2F6B44; --sc-tint: rgba(58,138,87,.18); --sc-bd: rgba(58,138,87,.55); --sc-tx: #1F4A30; }
-  .st-Philly   { --sc: #D97A1E; --sc-tint: rgba(217,122,30,.17); --sc-bd: rgba(217,122,30,.55); --sc-tx: #8A4A0C; }
-  .shift-box.full.st { background: var(--sc); border-color: var(--sc); color: #fff; }
+  .st-Philly   { --sc: #1F8A8A; --sc-tint: rgba(31,138,138,.15); --sc-bd: rgba(31,138,138,.5); --sc-tx: #145E5E; }
+  .shift-box.full.st { background: var(--sc); border-color: var(--sc); color: var(--sc-on, #fff); }
   .shift-box.part.st { background: var(--sc-tint); border-color: var(--sc-bd); color: var(--sc-tx); }
-  .chip.full.st { background: var(--sc); border-color: var(--sc); color: #fff; }
+  .chip.full.st { background: var(--sc); border-color: var(--sc); color: var(--sc-on, #fff); }
   .chip.st:not(.full) { background: var(--sc-tint); border-color: var(--sc-bd); color: var(--sc-tx); }
   table.mgrid td.rl.st { border-left: 5px solid var(--sc); color: var(--sc-tx); }
   .store-tabs button .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--sc); margin-right: 6px; vertical-align: 0; }
