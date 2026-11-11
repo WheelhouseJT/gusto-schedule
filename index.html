@@ -683,6 +683,18 @@
   .month-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-soft); margin-top: 12px; align-items: center; }
   .month-legend .chip { pointer-events: none; }
 
+  /* month week copy/paste */
+  table.mgrid thead th.wk-tools { vertical-align: middle; padding: 5px 6px; }
+  .wk-btns { display: flex; flex-direction: column; gap: 3px; margin-top: 3px; }
+  .wk-btn { font-family: var(--body); text-transform: none; letter-spacing: 0; font-size: 11.5px; font-weight: 600; padding: 3px 6px; border-radius: 5px; border: 1px solid #555; background: #1c1c1c; color: #fff; cursor: pointer; text-align: center; }
+  .wk-btn:hover { background: #333; }
+  .wk-btn.paste { background: var(--gold); border-color: var(--gold); color: #000; }
+  .wk-btn.paste:hover { filter: brightness(1.06); }
+  .wk-btn.copied { background: var(--blue); border-color: var(--blue); }
+  .month-copy-note { display: none; align-items: center; gap: 8px; font-size: 12.5px; background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 7px; padding: 4px 6px 4px 10px; }
+  .month-copy-note.show { display: inline-flex; }
+  .month-copy-note button { font: inherit; font-size: 12px; font-weight: 600; border: 1px solid var(--line-strong); background: #fff; border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+
   /* closures */
   table.mgrid td.mc.closed { cursor: pointer; background: repeating-linear-gradient(135deg, #e9ebef, #e9ebef 7px, #f4f5f7 7px, #f4f5f7 14px) !important; }
   .closed-tag { display: inline-block; font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; font-weight: 700; color: #4a5059; background: #fff; border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 7px; margin: 3px 1px; }
@@ -763,6 +775,7 @@
         <button class="arrow" id="nextMonth" aria-label="Next month">›</button>
         <button class="today-btn" id="thisMonthBtn">This month</button>
         <button class="today-btn" id="undoBtnM" title="Undo last change (Ctrl+Z)" disabled>↶ Undo</button>
+        <span class="month-copy-note" id="monthCopyNote"><span id="monthCopyText"></span><button type="button" id="monthCopyCancel">Done pasting</button></span>
       </div>
     </div>
     <div class="month-layout">
@@ -1041,11 +1054,16 @@
     document.getElementById('nextMonth').addEventListener('click', () => { monthCursor = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1); subscribeMonth(); renderMonth(); });
     document.getElementById('thisMonthBtn').addEventListener('click', () => { const d = new Date(); monthCursor = new Date(d.getFullYear(), d.getMonth(), 1); subscribeMonth(); renderMonth(); });
     document.getElementById('undoBtnM').addEventListener('click', undoLast);
+    document.getElementById('monthCopyCancel').addEventListener('click', () => { copiedWeek = null; renderWeekBanner(); renderMonth(); });
     document.getElementById('addEmpBtnM').addEventListener('click', () => addEmployee('newEmpNameM'));
     document.getElementById('newEmpNameM').addEventListener('keydown', (e) => { if (e.key === 'Enter') addEmployee('newEmpNameM'); });
 
     const weeksEl = document.getElementById('monthWeeks');
     weeksEl.addEventListener('click', (e) => {
+      const cb = e.target.closest('[data-copy]');
+      if (cb) { copyMonthWeek(cb.dataset.copy); return; }
+      const pb = e.target.closest('[data-paste]');
+      if (pb) { askPasteMonthWeek(pb.dataset.paste); return; }
       const x = e.target.closest('.chip .x');
       if (x) { e.stopPropagation(); removeFromDay(x.dataset.emp, x.dataset.date); return; }
       const td = e.target.closest('td.mc');
@@ -1383,6 +1401,11 @@
     const label = document.getElementById('monthLabel');
     if (!label) return;
     label.textContent = monthCursor.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const note = document.getElementById('monthCopyNote');
+    if (note) {
+      note.classList.toggle('show', !!copiedWeek);
+      if (copiedWeek) document.getElementById('monthCopyText').innerHTML = `Copied <strong>${escapeHtml(copiedWeek.label)}</strong> — click <strong>Paste here</strong> on any week`;
+    }
     if (view !== 'month' && view !== 'both') return;
 
     // roster with day counts for this month
@@ -1420,7 +1443,13 @@
 
     const html = monthWeeks().map(mon => {
       const days = [0,1,2,3,4,5,6].map(i => addDays(mon, i));
-      const head = `<tr><th>${isoDate(mon) === isoDate(currentWeekStart) ? '<span class="editing-tag">Editing</span>' : ''}</th>${days.map((d, i) => {
+      const monIso = isoDate(mon);
+      const isSrc = copiedWeek && copiedWeek.weekStart === monIso;
+      const wkBtns = `<div class="wk-btns">
+          <button type="button" class="wk-btn ${isSrc ? 'copied' : ''}" data-copy="${monIso}" title="Copy this week">${isSrc ? 'Copied ✓' : 'Copy week'}</button>
+          ${copiedWeek && !isSrc ? `<button type="button" class="wk-btn paste" data-paste="${monIso}" title="Paste ${escapeHtml(copiedWeek.label)} here">Paste here</button>` : ''}
+        </div>`;
+      const head = `<tr><th class="wk-tools">${monIso === isoDate(currentWeekStart) ? '<span class="editing-tag">Editing</span>' : ''}${wkBtns}</th>${days.map((d, i) => {
         const iso = isoDate(d), out = d.getMonth() !== monthCursor.getMonth();
         return `<th class="${out ? 'out' : ''} ${iso === todayIso ? 'today' : ''}">${DOW_NAMES[i]}<span class="md">${shortDate(d)}</span></th>`;
       }).join('')}</tr>`;
@@ -1498,7 +1527,7 @@
       undoLast();
     });
     document.getElementById('pasteWeekBtn').addEventListener('click', askPasteWeek);
-    document.getElementById('cancelWeekBtn').addEventListener('click', () => { copiedWeek = null; renderWeekBanner(); });
+    document.getElementById('cancelWeekBtn').addEventListener('click', () => { copiedWeek = null; renderWeekBanner(); renderMonth(); });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && copiedShift) exitCopyMode();
     });
@@ -1668,13 +1697,80 @@
     undoing = false; refreshUndoBtn();
   }
 
+  // ---- Copy / paste a week from the Monthly Planner ----
+  function parseIso(iso) { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); }
+  function shiftsInWeek(monIso) {
+    return Object.values(monthShifts).filter(sh => sh.weekStart === monIso && empById(sh.empId));
+  }
+  function copyMonthWeek(monIso) {
+    const shifts = shiftsInWeek(monIso).map(s => s.timeOff
+      ? { empId: s.empId, dow: s.dow, timeOff: true }
+      : { empId: s.empId, dow: s.dow, start: s.start || "", end: s.end || "", location: s.location, type: s.type || 'full', timeOff: false });
+    if (!shifts.length) { toast("That week has no one scheduled to copy."); return; }
+    copiedWeek = { weekStart: monIso, label: weekLabel(parseIso(monIso)), shifts };
+    renderWeekBanner(); renderMonth();
+    toast("Week copied — click Paste here on any other week.");
+  }
+  function askPasteMonthWeek(monIso) {
+    if (!copiedWeek || copiedWeek.weekStart === monIso || !db) return;
+    const existing = shiftsInWeek(monIso).length;
+    if (!existing) { pasteMonthWeek(monIso, "fill"); return; }
+    const root = document.getElementById('modalRoot');
+    root.innerHTML = `
+      <div class="confirm-box" id="confirmBox">
+        <div class="confirm-card" style="max-width:380px;">
+          <p>The week of <strong>${escapeHtml(weekLabel(parseIso(monIso)))}</strong> already has <strong>${existing}</strong> ${existing === 1 ? 'entry' : 'entries'}. How should <strong>${escapeHtml(copiedWeek.label)}</strong> go in?</p>
+          <div class="confirm-actions" style="flex-wrap:wrap;">
+            <button class="btn ghost" id="mpCancel">Cancel</button>
+            <button class="btn" id="mpFill">Only fill empty days</button>
+            <button class="btn primary" id="mpReplace">Replace whole week</button>
+          </div>
+        </div>
+      </div>`;
+    const close = () => { root.innerHTML = ''; };
+    root.querySelector('#mpCancel').addEventListener('click', close);
+    root.querySelector('#mpFill').addEventListener('click', () => { close(); pasteMonthWeek(monIso, "fill"); });
+    root.querySelector('#mpReplace').addEventListener('click', () => { close(); pasteMonthWeek(monIso, "replace"); });
+    root.querySelector('#confirmBox').addEventListener('click', (e) => { if (e.target.id === 'confirmBox') close(); });
+  }
+  async function pasteMonthWeek(monIso, mode) {
+    if (!copiedWeek || !db) return;
+    const mon = parseIso(monIso);
+    const current = {};
+    shiftsInWeek(monIso).forEach(sh => { current[sh.empId + '_' + sh.dow] = sh; });
+    const batch = db.batch(), touched = {};
+    let written = 0, skippedClosed = 0;
+    const idOf = (empId, dow) => monIso + "__" + empId + "__" + dow;
+    const remember = (empId, dow) => {
+      const id = idOf(empId, dow);
+      if (!(id in touched)) { const prev = current[empId + '_' + dow]; touched[id] = prev ? Object.assign({}, prev) : null; }
+    };
+    if (mode === "replace") {
+      Object.values(current).forEach(sh => { remember(sh.empId, sh.dow); batch.delete(db.collection("shifts").doc(idOf(sh.empId, sh.dow))); });
+    }
+    copiedWeek.shifts.forEach(sh => {
+      if (!empById(sh.empId)) return;
+      if (mode === "fill" && current[sh.empId + '_' + sh.dow]) return;
+      if (!sh.timeOff && isClosed(isoDate(addDays(mon, sh.dow)), sh.location)) { skippedClosed++; return; }
+      remember(sh.empId, sh.dow);
+      batch.set(db.collection("shifts").doc(idOf(sh.empId, sh.dow)), Object.assign({}, sh, { weekStart: monIso }));
+      written++;
+    });
+    if (!Object.keys(touched).length) { toast("Nothing to paste — those days are already filled."); return; }
+    try {
+      await batch.commit();
+      pushUndo("paste week", Object.keys(touched).map(id => ({ id, before: touched[id] })));
+      toast(`Pasted into ${weekLabel(mon)}${skippedClosed ? ` — skipped ${skippedClosed} at closed stores` : ''}.`);
+    } catch (e) { console.error(e); toast("Couldn't paste the week — nothing was changed."); }
+  }
+
   function copyCurrentWeek() {
     const shifts = Object.values(shiftsByKey).map(s => s.timeOff
       ? { empId: s.empId, dow: s.dow, timeOff: true }
       : { empId: s.empId, dow: s.dow, start: s.start, end: s.end, location: s.location, type: s.type, timeOff: false });
     if (shifts.length === 0) { toast("This week has no shifts to copy."); return; }
     copiedWeek = { weekStart: isoDate(currentWeekStart), label: weekLabel(currentWeekStart), shifts };
-    renderWeekBanner();
+    renderWeekBanner(); renderMonth();
     toast("Week copied — go to another week and paste it.");
   }
 
